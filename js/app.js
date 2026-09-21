@@ -58,6 +58,7 @@ async function show(id, view, ctx, name) {
   if (id !== renderId) return; // a newer navigation won the race
 
   document.body.dataset.view = name;
+  document.body.classList.remove('is-editing');
   document.title = result.title ? `${result.title} · ${SITE}` : `${SITE} · The Kitchen Notebook`;
   main.innerHTML = str(result.body);
   for (const a of document.querySelectorAll('[data-nav]')) {

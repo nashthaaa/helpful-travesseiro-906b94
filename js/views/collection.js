@@ -1,4 +1,4 @@
-import { html, str, print, icon, cap, pad2, CATEGORIES, tiltFor } from '../ui.js';
+import { html, str, print, icon, cap, CATEGORIES } from '../ui.js';
 import { listRecipes, searchRecipes, ingredientHit, contributors } from '../store.js';
 
 const RATIOS = [0.8, 1, 1.25, 0.8, 1, 1.25]; // a little variety down the page
@@ -8,12 +8,10 @@ function entry(r, i, q) {
   return html`
     <li class="entry">
       <a class="entry__link" href="#/recipe/${r.id}">
-        ${print(r.photo, { seed: r.id, tilt: tiltFor(r.id, 2), ratio: RATIOS[i % RATIOS.length], cover: true, caption: '', tape: i % 4 === 0 ? 'tl' : '', variant: i % 3 === 1 ? 'print--plain' : '' })}
-        <span class="entry__meta label">${r.number ? `No. ${pad2(r.number)}` : 'Sample'} · ${r.category}</span>
+        ${print(r.photo, { seed: r.id, tilt: 0, ratio: RATIOS[i % RATIOS.length], cover: true, caption: '', variant: 'print--plain' })}
         <span class="entry__title">${r.title}</span>
-        <span class="meta">by ${r.contributor}</span>
+        <span class="meta">${r.sample ? 'sample recipe' : `by ${r.contributor}`} · ${r.category}</span>
         ${hit ? html`<span class="entry__hit">with ${hit}</span>` : ''}
-        ${r.quote && !hit ? html`<span class="hand entry__quote">${r.quote}</span>` : ''}
       </a>
     </li>`;
 }
@@ -35,22 +33,16 @@ export async function collectionView({ query }) {
     return found.length
       ? html`<ul class="entries">${found.map((r, i) => entry(r, i, s.q))}</ul>`
       : html`<div class="empty">
-          <p class="hand hand--lg">nothing in the index matches that yet.</p>
+          <p class="hand hand--lg">nothing here yet.</p>
           <p class="lede">Try another ingredient, or clear the filters. Or <a href="#/add">add the recipe yourself</a>.</p>
         </div>`;
   };
   const countText = (s) => { const n = results(s).length; return `${n} ${n === 1 ? 'recipe' : 'recipes'}`; };
 
   const body = html`
-    <section class="sheet sheet--collection" style="--paper-tilt:.18deg" aria-labelledby="coll-title">
+    <section class="sheet" aria-labelledby="coll-title">
       <p class="bracket">[ ${all.length} ${all.length === 1 ? 'recipe' : 'recipes'}, cooked by ${cooks.length} ${cooks.length === 1 ? 'person' : 'people'} ]</p>
-      <div class="coll-head">
-        <div>
-          <p class="label">The index</p>
-          <h1 class="display" id="coll-title">All the<br>recipes</h1>
-        </div>
-        <p class="hand coll-head__hand">what are we making tonight?</p>
-      </div>
+      <h1 class="display" id="coll-title">All the<br>recipes</h1>
 
       <form class="finder" role="search" aria-label="Search the recipes" autocomplete="off">
         <div class="finder__search">
@@ -70,14 +62,14 @@ export async function collectionView({ query }) {
           </div>
         </div>
         <fieldset class="finder__cats">
-          <legend class="label">Course</legend>
+          <legend class="sr-only">Course</legend>
           <div class="cats">
             ${tabs.map(([v, label, n]) => html`<button type="button" class="cat" data-cat="${v}" aria-pressed="${v === state.cat}">${label}<span class="cat__n">${n}</span></button>`)}
           </div>
         </fieldset>
       </form>
 
-      <p class="count" id="count" role="status" aria-live="polite">${countText(state)}</p>
+      <p class="sr-only" id="count" role="status" aria-live="polite">${countText(state)}</p>
       <div id="results">${list(state)}</div>
     </section>`;
 

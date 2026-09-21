@@ -4,12 +4,61 @@
 
 import { SEED } from './seed.js';
 
+// Edits made in the browser are kept as a small overlay on top of the seed
+// data. In Stage 3 the same two update functions write to the shared database
+// instead, and nothing that calls them has to change.
+const EDITS_KEY = 'sb8:edits';
+const readEdits = () => { try { return JSON.parse(localStorage.getItem(EDITS_KEY)) || {}; } catch { return {}; } };
+const writeEdits = (e) => { try { localStorage.setItem(EDITS_KEY, JSON.stringify(e)); return true; } catch { return false; } };
+
+// Only handwriting fields can be edited this way.
+const EDITABLE = /^(quote|note\.text|photo\.caption|photos\.\d+\.caption|memories\.\d+\.caption)$/;
+const SETTING_KEYS = ['heroHand'];
+const SETTING_DEFAULTS = { heroHand: 'cook something. write it down. pass it on.' };
+
+function setPath(obj, path, value) {
+  const keys = path.split('.');
+  let o = obj;
+  keys.forEach((k, i) => {
+    if (i === keys.length - 1) { o[k] = value; return; }
+    if (o[k] == null) o[k] = /^\d+$/.test(keys[i + 1]) ? [] : {};
+    o = o[k];
+  });
+}
+
+function withEdits(recipe) {
+  const r = structuredClone(recipe);
+  const mine = readEdits().recipes?.[r.id] || {};
+  for (const [path, value] of Object.entries(mine)) if (EDITABLE.test(path)) setPath(r, path, value);
+  return r;
+}
+
 export async function listRecipes() {
-  return SEED.slice().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  return SEED.map(withEdits).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 }
 
 export async function getRecipe(id) {
-  return SEED.find((r) => r.id === id) || null;
+  const r = SEED.find((x) => x.id === id);
+  return r ? withEdits(r) : null;
+}
+
+export async function updateRecipeField(id, path, value) {
+  if (!EDITABLE.test(path) || !SEED.some((r) => r.id === id)) return false;
+  const edits = readEdits();
+  edits.recipes = edits.recipes || {};
+  edits.recipes[id] = { ...edits.recipes[id], [path]: String(value).trim() };
+  return writeEdits(edits);
+}
+
+export async function getSettings() {
+  return { ...SETTING_DEFAULTS, ...(readEdits().settings || {}) };
+}
+
+export async function updateSetting(key, value) {
+  if (!SETTING_KEYS.includes(key)) return false;
+  const edits = readEdits();
+  edits.settings = { ...edits.settings, [key]: String(value).trim() };
+  return writeEdits(edits);
 }
 
 /* ---------- pure helpers over a list of recipes ---------- */

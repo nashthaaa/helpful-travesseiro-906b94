@@ -96,11 +96,18 @@ const ICONS = {
   minus: '<path d="M5 12h14"/>',
   x: '<path d="M6 6l12 12M18 6L6 18"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  pencil: '<path d="M4 20l1-4L16.5 4.5a2 2 0 013 3L8 19l-4 1zM14 7l3 3"/>',
   pot: '<path d="M4 10h16v6a4 4 0 01-4 4H8a4 4 0 01-4-4v-6zM2 10h2M20 10h2M8 6c0-1.5 1-1.5 1-3M13 6c0-1.5 1-1.5 1-3"/>',
 };
 export const icon = (name, cls = '') => raw(
   `<svg class="icon ${cls}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICONS[name]}</svg>`
 );
+
+/* ---------- editable handwriting ---------- */
+
+// Marks an element as click-to-edit while "Edit handwriting" is switched on.
+// Keep the element's text directly between the tags so :empty works.
+export const ed = (scope, path, ph = 'add some handwriting') => raw(`data-edit="${str(scope)}|${str(path)}" data-ph="${str(ph)}"`);
 
 /* ---------- photos ---------- */
 
@@ -149,9 +156,9 @@ export function placeholder(seed, ratio = 0.8, label = 'photo to come') {
 
 // <figure class="print"> with the optional tape / tilt / caption treatments.
 export function print(photo, opts = {}) {
-  const { seed = photo?.src || 'x', tilt = tiltFor(seed), tape = '', variant = '', ratio, cover = false, eager = false, sizes, caption = photo?.caption, phLabel } = opts;
+  const { seed = photo?.src || 'x', tilt = tiltFor(seed), tape = '', variant = '', ratio, cover = false, eager = false, sizes, caption = photo?.caption, phLabel, edit } = opts;
   const media = photo?.src
     ? html`<img src="${photo.src}" alt="${photo.alt || caption || ''}"${photo.w ? raw(` width="${photo.w}" height="${photo.h}"`) : ''}${cover && ratio ? raw(` style="aspect-ratio:${ratio};object-fit:cover"`) : ''} ${eager ? raw('fetchpriority="high"') : raw('loading="lazy"')} decoding="async"${sizes ? raw(` sizes="${str(sizes)}"`) : ''}>`
     : placeholder(seed, ratio || 0.8, phLabel);
-  return html`<figure class="print ${variant}" style="--tilt:${tilt}deg">${tape ? raw(`<span class="tape tape--${tape}" aria-hidden="true"></span>`) : ''}${media}${caption ? html`<figcaption>${caption}</figcaption>` : ''}</figure>`;
+  return html`<figure class="print ${variant}" style="--tilt:${tilt}deg">${tape ? raw(`<span class="tape tape--${tape}" aria-hidden="true"></span>`) : ''}${media}${caption || edit ? html`<figcaption ${edit ? ed(edit.scope, edit.path, edit.ph || 'add a caption') : ''}>${caption || ''}</figcaption>` : ''}</figure>`;
 }

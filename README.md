@@ -7,7 +7,7 @@ plain HTML, CSS and ES modules, with hash routing so it can be hosted anywhere
 ## Run it locally
 
 ```bash
-python3 -m http.server 5173
+python3 serve.py
 ```
 
 Then open http://localhost:5173. (Any static file server works; ES modules

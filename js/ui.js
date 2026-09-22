@@ -49,6 +49,16 @@ export function tiltFor(seed, max = 2.4) {
   return +(sign * (0.8 + (r * 2 % 1) * (max - 0.8))).toFixed(2);
 }
 
+export function setPath(obj, path, value) {
+  const keys = path.split('.');
+  let o = obj;
+  keys.forEach((k, i) => {
+    if (i === keys.length - 1) { o[k] = value; return; }
+    if (o[k] == null) o[k] = /^\d+$/.test(keys[i + 1]) ? [] : {};
+    o = o[k];
+  });
+}
+
 export function slugify(s) {
   return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'recipe';

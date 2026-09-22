@@ -408,3 +408,48 @@ body[data-view='cook'] .site-header, body[data-view='cook'] .site-footer { displ
   .sheet::before { display: none; }
   .sheet { break-after: page; padding: 0; }
 }
+
+/* ---------- recipe editor ---------- */
+
+.editor .crumbs { width: var(--sheet-w); margin: 0 auto 14px; }
+.editor .crumbs a { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; text-decoration: none; }
+.editor .crumbs a:hover { text-decoration: underline; }
+
+.form { display: grid; gap: 2.6rem; margin-top: 2.2rem; max-width: 42rem; }
+.field { display: grid; gap: .5rem; min-width: 0; }
+.field-row { display: grid; gap: 1.4rem; }
+@media (min-width: 640px) { .field-row--2 { grid-template-columns: 1fr 1fr; } .field-row--3 { grid-template-columns: 6rem 6rem 1fr; } }
+
+.input {
+  width: 100%; padding: .6rem 0; background: transparent; color: var(--ink);
+  border: 0; border-bottom: 2px solid var(--ink); border-radius: 0; font-size: 1.05rem; font-family: var(--font-type);
+}
+textarea.input { border: 1.5px solid var(--ink); padding: .7rem .8rem; resize: vertical; min-height: 4.5rem; }
+.input::placeholder { color: var(--ink-soft); opacity: .75; }
+.input:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.field .select select { min-height: 50px; }
+
+.rows { display: grid; gap: 1.2rem; margin-top: 1rem; }
+.row-card { position: relative; display: grid; gap: 1rem; padding: 1.2rem 3rem 1.2rem 1.2rem; border: 1.5px solid var(--line); }
+.row-card__remove { position: absolute; top: .7rem; right: .7rem; }
+.icon-btn { width: 38px; height: 38px; display: grid; place-items: center; background: none; border: 1.5px solid var(--line); border-radius: 50%; color: var(--ink-soft); cursor: pointer; }
+.icon-btn:hover { color: var(--terra); border-color: var(--terra); }
+.icon-btn .icon { width: 16px; height: 16px; }
+
+.add-row {
+  display: inline-flex; align-items: center; gap: .6rem; min-height: 48px; padding: 0 1.2rem; margin-top: 1rem;
+  background: none; border: 1.5px dashed var(--ink-soft); color: var(--ink); font-size: .95rem; cursor: pointer;
+}
+.add-row:hover { border-color: var(--ink); border-style: solid; }
+
+.photo-field { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1.2rem; }
+.photo-field__preview { display: block; width: 7rem; aspect-ratio: 1; background: var(--print); border: 1.5px solid var(--line); cursor: pointer; overflow: hidden; }
+.photo-field__preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-field__empty { width: 100%; height: 100%; display: grid; place-items: center; color: var(--ink-soft); }
+.photo-field__side { flex: 1 1 14rem; min-width: 12rem; display: grid; gap: .7rem; align-content: start; }
+.photo-field .input { max-width: 22rem; }
+
+.form-msg { padding: .9rem 1.1rem; border: 1.5px dashed var(--terra); color: var(--terra); font-size: .92rem; }
+
+.danger { color: var(--terra); }
+.danger:hover { color: var(--terra); }

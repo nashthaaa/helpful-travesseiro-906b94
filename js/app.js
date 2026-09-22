@@ -8,7 +8,8 @@ import { homeView } from './views/home.js';
 import { collectionView } from './views/collection.js';
 import { recipeView } from './views/recipe.js';
 import { cookView } from './views/cook.js';
-import { editorStubView, notFoundView } from './views/misc.js';
+import { editorView } from './views/editor.js';
+import { notFoundView } from './views/misc.js';
 
 const main = document.getElementById('main');
 const SITE = 'Sherbourne 8';
@@ -18,8 +19,8 @@ const routes = [
   [/^\/recipes\/?$/, collectionView, 'recipes'],
   [/^\/recipe\/([^/]+)\/?$/, recipeView, 'recipe'],
   [/^\/recipe\/([^/]+)\/cook\/?$/, cookView, 'cook'],
-  [/^\/add\/?$/, editorStubView, 'add'],
-  [/^\/edit\/([^/]+)\/?$/, editorStubView, 'add'],
+  [/^\/add\/?$/, editorView, 'add'],
+  [/^\/edit\/([^/]+)\/?$/, editorView, 'add'],
 ];
 
 let current = null;   // { unmount }

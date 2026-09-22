@@ -2,8 +2,10 @@
 // (quotes, notes, captions) becomes click-to-edit. Nothing else on the page
 // changes, so the pages stay uncluttered when you are just reading.
 
-import { html, icon } from './ui.js';
+import { html, str, icon } from './ui.js';
 import { updateRecipeField, updateSetting } from './store.js';
+import { isSignedIn } from './auth.js';
+import { signInPanel, mountSignInPanel } from './auth-ui.js';
 
 export const editBar = (left = '', right = '') => html`
   <div class="pagebar">
@@ -12,7 +14,8 @@ export const editBar = (left = '', right = '') => html`
       ${right}
       <button type="button" class="edit-toggle" data-edit-toggle aria-pressed="false">${icon('pencil')}<span>Edit handwriting</span></button>
     </div>
-    <p class="pagebar__note" data-edit-note hidden>Tap any handwriting to change it. For now, changes are saved on this device only. Sharing them with everyone comes with the next stage.</p>
+    <p class="pagebar__note" data-edit-note hidden>Tap any handwriting to change it — it's saved for everyone.</p>
+    <div class="pagebar__signin" data-edit-signin hidden></div>
   </div>`;
 
 async function save(scope, path, value) {
@@ -25,6 +28,7 @@ export function setupEditing(root) {
   const toggle = root.querySelector('[data-edit-toggle]');
   if (!toggle) return;
   const note = root.querySelector('[data-edit-note]');
+  const signinSlot = root.querySelector('[data-edit-signin]');
   const label = toggle.querySelector('span');
   let on = false;
 
@@ -37,6 +41,7 @@ export function setupEditing(root) {
   function set(value) {
     on = value;
     closeEditor();
+    signinSlot.hidden = true;
     document.body.classList.toggle('is-editing', on);
     toggle.setAttribute('aria-pressed', String(on));
     label.textContent = on ? 'Done editing' : 'Edit handwriting';
@@ -92,7 +97,15 @@ export function setupEditing(root) {
     });
   }
 
-  toggle.addEventListener('click', () => set(!on));
+  toggle.addEventListener('click', () => {
+    if (!on && !isSignedIn()) {
+      signinSlot.innerHTML = str(signInPanel('sign in to edit the handwriting on this page.'));
+      signinSlot.hidden = false;
+      mountSignInPanel(signinSlot);
+      return;
+    }
+    set(!on);
+  });
   root.addEventListener('click', (e) => {
     if (!on) return;
     const el = e.target.closest('[data-edit]');

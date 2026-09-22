@@ -1,4 +1,8 @@
-// Stage 2 seed data. In Stage 3 this moves into the database.
+// Historical record only — the app no longer reads this file. It's the exact
+// source `supabase/schema.sql`'s starter INSERT statements were generated
+// from (see the note at the top of that file); kept here so the starter
+// content's origin is traceable. To change what a fresh database starts
+// with, edit supabase/schema.sql directly.
 //
 // Only "Shifaa's Veggie Pasta" is real content, taken from the existing mockups.
 // The five entries marked `sample: true` exist so the collection page has

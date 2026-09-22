@@ -3,25 +3,35 @@
 // only, until Stage 3 moves storage to the shared database.
 
 import { html, str, icon, cap, CATEGORIES, setPath } from '../ui.js';
-import { getRecipeDraft, saveRecipe, deleteRecipe } from '../store.js';
+import { getRecipe, saveRecipe, deleteRecipe } from '../store.js';
 import * as photos from '../imagestore.js';
+import { isSignedIn } from '../auth.js';
+import { signInPanel, mountSignInPanel } from '../auth-ui.js';
 
 const YOU_KEY = 'sb8:you';
 const emptyIngredient = () => ({ amount: '', unit: '', item: '', note: '' });
 const emptyPhoto = () => ({ src: '', url: '', w: null, h: null, caption: '' });
 
-// A photo already on the recipe, ready to preview: figure out a showable
-// URL for it now (an upload needs an IndexedDB lookup; an original mockup
-// photo is already a plain path).
-async function withPreview(p) {
-  if (!p?.src) return null;
-  const url = photos.isRef(p.src) ? await photos.url(photos.refId(p.src)) : p.src;
-  return { src: p.src, url: url || '', w: p.w || null, h: p.h || null, caption: p.caption || '' };
-}
+// A photo already on the recipe, ready to preview — its "src" is already a
+// showable URL, whether it's an upload or one of the original mockup photos.
+const withPreview = (p) => (p?.src ? { src: p.src, url: p.src, w: p.w || null, h: p.h || null, caption: p.caption || '' } : null);
 
 export async function editorView({ params: [id] }) {
-  const existing = id ? await getRecipeDraft(id) : null;
+  const existing = id ? await getRecipe(id) : null;
   if (id && !existing) return { title: 'Recipe not found', body: notFound() };
+
+  if (!isSignedIn()) {
+    const body = html`
+      <div class="editor">
+        <p class="crumbs"><a href="${id ? `#/recipe/${id}` : '#/recipes'}">${icon('left')} ${id ? 'Back to the recipe' : 'All recipes'}</a></p>
+        <section class="sheet sheet--short" aria-labelledby="ed-title">
+          <p class="label">${id ? `Editing ${existing.title}` : 'A new page in the notebook'}</p>
+          <h1 class="display display--md" id="ed-title">${id ? 'Sign in to edit' : 'Sign in to add a recipe'}</h1>
+          ${signInPanel('anyone in the kitchen can browse — signing in is just for adding and editing.')}
+        </section>
+      </div>`;
+    return { title: id ? `Edit ${existing.title}` : 'Add a recipe', body, mount: mountSignInPanel };
+  }
 
   const state = existing ? {
     title: existing.title || '',
@@ -33,9 +43,9 @@ export async function editorView({ params: [id] }) {
     note: { text: existing.note?.text || '', by: existing.note?.by || '' },
     ingredients: existing.ingredients?.length ? existing.ingredients.map((i) => ({ amount: i.amount ?? '', unit: i.unit || '', item: i.item || '', note: i.note || '' })) : [emptyIngredient()],
     steps: existing.steps?.length ? [...existing.steps] : [''],
-    photo: await withPreview(existing.photo),
-    extra: (await Promise.all((existing.photos || []).map(withPreview))).filter(Boolean),
-    memories: (await Promise.all((existing.memories || []).map(withPreview))).filter(Boolean),
+    photo: withPreview(existing.photo),
+    extra: (existing.photos || []).map(withPreview).filter(Boolean),
+    memories: (existing.memories || []).map(withPreview).filter(Boolean),
   } : {
     title: '', contributor: (() => { try { return localStorage.getItem(YOU_KEY) || ''; } catch { return ''; } })(),
     category: 'dinner', tagline: '', servings: '', quote: '', note: { text: '', by: '' },
@@ -172,8 +182,8 @@ export async function editorView({ params: [id] }) {
       msg.hidden = true;
       try {
         const img = await photos.put(file);
-        if (slot.old && photos.isRef(slot.old)) await photos.remove(photos.refId(slot.old));
-        slot.set({ src: photos.toRef(img.id), url: img.url, w: img.w, h: img.h, caption: slot.caption });
+        if (slot.old && photos.isUploaded(slot.old)) await photos.remove(slot.old);
+        slot.set({ src: img.url, url: img.url, w: img.w, h: img.h, caption: slot.caption });
       } catch (err) {
         showMsg(err.message || "That photo couldn't be used.");
       }
@@ -206,10 +216,10 @@ export async function editorView({ params: [id] }) {
       else if (action === 'add-step') { state.steps.push(''); refresh('steps'); root.querySelector(`#step-rows [data-index="${state.steps.length - 1}"] textarea`)?.focus(); }
       else if (action === 'remove-step') { if (state.steps.length > 1) { state.steps.splice(i, 1); refresh('steps'); } }
       else if (action === 'add-extra') { state.extra.push(emptyPhoto()); refresh('extra'); }
-      else if (action === 'remove-extra') { const [p] = state.extra.splice(i, 1); if (p?.src && photos.isRef(p.src)) await photos.remove(photos.refId(p.src)); refresh('extra'); }
+      else if (action === 'remove-extra') { const [p] = state.extra.splice(i, 1); if (p?.src && photos.isUploaded(p.src)) await photos.remove(p.src); refresh('extra'); }
       else if (action === 'add-memory') { state.memories.push(emptyPhoto()); refresh('memories'); }
-      else if (action === 'remove-memory') { const [p] = state.memories.splice(i, 1); if (p?.src && photos.isRef(p.src)) await photos.remove(photos.refId(p.src)); refresh('memories'); }
-      else if (action === 'remove-main') { if (state.photo?.src && photos.isRef(state.photo.src)) await photos.remove(photos.refId(state.photo.src)); state.photo = null; refreshMain(); }
+      else if (action === 'remove-memory') { const [p] = state.memories.splice(i, 1); if (p?.src && photos.isUploaded(p.src)) await photos.remove(p.src); refresh('memories'); }
+      else if (action === 'remove-main') { if (state.photo?.src && photos.isUploaded(state.photo.src)) await photos.remove(state.photo.src); state.photo = null; refreshMain(); }
       else if (action === 'delete') {
         if (btn.dataset.confirm) { await deleteRecipe(id); location.hash = '#/recipes'; }
         else { btn.dataset.confirm = '1'; btn.textContent = 'Click again to delete for good'; }

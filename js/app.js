@@ -3,13 +3,15 @@
 //
 // A view is `async (ctx) => ({ title, body, mount?(root), unmount?() })`.
 
-import { str } from './ui.js';
+import { html, str, icon } from './ui.js';
 import { homeView } from './views/home.js';
 import { collectionView } from './views/collection.js';
 import { recipeView } from './views/recipe.js';
 import { cookView } from './views/cook.js';
 import { editorView } from './views/editor.js';
 import { notFoundView } from './views/misc.js';
+import * as auth from './auth.js';
+import { mountHeaderAuth } from './auth-ui.js';
 
 const main = document.getElementById('main');
 const SITE = 'Sherbourne 8';
@@ -54,7 +56,15 @@ async function show(id, view, ctx, name) {
     result = await view(ctx);
   } catch (err) {
     console.error(err);
-    result = { title: 'Something went wrong', body: '<section class="sheet"><h1 class="display display--md">Something went wrong.</h1><p class="lede">This page could not be opened. Try going back to the <a href="#/">first page</a>.</p></section>' };
+    result = {
+      title: 'Something went wrong',
+      body: html`
+        <section class="sheet sheet--short">
+          <h1 class="display display--md">Something went wrong.</h1>
+          <p class="lede">${err?.message || 'This page could not be opened.'}</p>
+          <div class="actions"><a class="btn" href="#/">${icon('left')} Back to the first page</a></div>
+        </section>`,
+    };
   }
   if (id !== renderId) return; // a newer navigation won the race
 
@@ -82,5 +92,12 @@ document.querySelector('[data-skip]').addEventListener('click', (e) => {
   main.scrollIntoView();
 });
 
+mountHeaderAuth(document.getElementById('auth-slot'));
+
 window.addEventListener('hashchange', render);
 render();
+
+// Signing in or out can change what the current page should show (an
+// editor's sign-in gate, an "Edit recipe" link) — re-render in place.
+auth.onAuthChange(() => render());
+auth.init();

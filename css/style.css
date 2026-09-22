@@ -453,3 +453,18 @@ textarea.input { border: 1.5px solid var(--ink); padding: .7rem .8rem; resize: v
 
 .danger { color: var(--terra); }
 .danger:hover { color: var(--terra); }
+
+/* ---------- sign-in ---------- */
+
+.auth-status { display: inline-flex; align-items: center; gap: .8rem; }
+.auth-status .meta { display: none; }
+@media (min-width: 640px) { .auth-status .meta { display: inline; } }
+
+.signin { margin-top: 1.6rem; padding: 1.6rem; border: 1.5px solid var(--line); max-width: 30rem; }
+.signin .hand { transform: rotate(-1deg); margin-bottom: 1.2rem; }
+.signin__form { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; }
+.signin__form .input { flex: 1 1 14rem; border: 0; border-bottom: 2px solid var(--ink); }
+.signin__msg { margin-top: 1rem; font-size: .92rem; }
+
+.pagebar__signin { flex-basis: 100%; max-width: 30rem; }
+.pagebar__signin .signin { margin-top: 10px; }

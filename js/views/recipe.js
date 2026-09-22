@@ -71,7 +71,7 @@ export async function recipeView({ params: [id] }) {
       <section class="sheet spread spread--method" id="page-3" aria-labelledby="r-method">
         <div class="spread__cols ${extraPhoto || moreMemories.length ? '' : 'spread__cols--single'}">
           <div class="spread__text">
-            <h2 class="display display--md" id="r-method">Make it slowly.</h2>
+            <h2 class="display display--md" id="r-method">Then make it.</h2>
             <ol class="steps">
               ${r.steps.map((s) => html`<li><p>${s}</p></li>`)}
             </ol>

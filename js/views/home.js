@@ -1,11 +1,11 @@
 import { html, print, icon, cap, CATEGORIES, ed } from '../ui.js';
-import { listRecipes, featured, recent, categoryCounts, scrapbook, getSettings } from '../store.js';
+import { listRecipes, recent, categoryCounts, scrapbook, collagePhotos, getSettings } from '../store.js';
 import { editBar, setupEditing } from '../edit.js';
+import { collageHtml, mountCollage } from '../collage.js';
 
 export async function homeView() {
   const [all, settings] = await Promise.all([listRecipes(), getSettings()]);
-  const feat = featured(all);
-  const latest = recent(all, 3, feat?.id);
+  const latest = recent(all, 3);
   const counts = categoryCounts(all);
   const { memories, notes } = scrapbook(all);
 
@@ -25,14 +25,7 @@ export async function homeView() {
           </div>
         </div>
 
-        ${feat ? html`
-        <div class="hero__feature">
-          <a class="hero__photo" href="#/recipe/${feat.id}" aria-label="Open ${feat.title}">
-            ${print(feat.photo, { seed: feat.id, tilt: 1.4, eager: true, caption: '', ratio: 0.8, sizes: '(min-width: 1020px) 430px, 80vw' })}
-          </a>
-          <p class="hand hand--lg hero__quote" ${ed('recipe:' + feat.id, 'quote', 'add a quote')}>${feat.quote || ''}</p>
-          <a class="hero__title" href="#/recipe/${feat.id}">${feat.title} ${icon('right')}</a>
-        </div>` : ''}
+        ${collageHtml(collagePhotos(all))}
       </div>
     </section>
 
@@ -76,5 +69,11 @@ export async function homeView() {
     </section>` : ''}
   `;
 
-  return { title: 'Our Kitchen', body, mount: setupEditing };
+  let stop;
+  function mount(root) {
+    setupEditing(root);
+    stop = mountCollage(root);
+  }
+
+  return { title: 'Our Kitchen', body, mount, unmount: () => stop?.() };
 }

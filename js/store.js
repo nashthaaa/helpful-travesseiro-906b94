@@ -101,6 +101,17 @@ export function categoryCounts(list) {
   return out;
 }
 
+// Every real photograph in the book, split into food photos and memories.
+export function collagePhotos(list) {
+  const food = [], memories = [];
+  for (const r of list) {
+    if (r.photo?.src) food.push(r.photo);
+    for (const p of r.photos || []) if (p.src) food.push(p);
+    for (const m of r.memories || []) if (m.src) memories.push(m);
+  }
+  return { food, memories };
+}
+
 export function scrapbook(list) {
   const memories = list.flatMap((r) => (r.memories || []).map((m) => ({ ...m, recipe: r })));
   const notes = list.filter((r) => r.note?.text).map((r) => ({ ...r.note, recipe: r }));

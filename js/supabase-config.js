@@ -10,3 +10,8 @@
 // Fill these in from your project: Supabase dashboard → Settings → API.
 export const SUPABASE_URL = '';
 export const SUPABASE_ANON_KEY = '';
+
+// The one shared account everyone in the kitchen signs into (see the setup
+// guide) — just its email, never its password. Not a secret: knowing this
+// address doesn't let anyone in without the password too.
+export const SHARED_LOGIN_EMAIL = '';

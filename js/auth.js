@@ -1,7 +1,12 @@
-// Who's signed in, and the magic-link flow for signing in. Browsing and
-// cooking never need this — only adding, editing and deleting recipes do.
+// Who's signed in, and signing in. Browsing and cooking never need this —
+// only adding, editing and deleting recipes do.
+//
+// Everyone in the kitchen shares one account (see supabase/schema.sql's
+// guide) — signing in just means typing the one shared password. Sessions
+// persist, so this is a once-per-device thing, not a once-per-visit one.
 
 import { getClient, configured } from './supabase-client.js';
+import { SHARED_LOGIN_EMAIL } from './supabase-config.js';
 
 let user = null;
 const listeners = new Set();
@@ -29,14 +34,9 @@ export async function init() {
   });
 }
 
-// Emails a one-time sign-in link. The link brings them back to this same
-// page, already signed in — see the onAuthStateChange hook in app.js.
-export async function sendMagicLink(email) {
-  const { error } = await getClient().auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: location.origin + location.pathname },
-  });
-  if (error) throw new Error(error.message);
+export async function signIn(password) {
+  const { error } = await getClient().auth.signInWithPassword({ email: SHARED_LOGIN_EMAIL, password });
+  if (error) throw new Error(error.message === 'Invalid login credentials' ? "That password isn't right." : error.message);
 }
 
 export async function signOut() {

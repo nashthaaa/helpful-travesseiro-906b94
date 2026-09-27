@@ -310,13 +310,17 @@ function renderMainPhoto(p) {
 }
 
 function renderPhotoRow(key, p, idx) {
+  // `key` names the row for ids/actions ("memory"); `field` is the actual
+  // array on `state` it belongs to ("memories") — picking/replacing a photo
+  // needs the latter, or it silently writes to a property that doesn't exist.
+  const field = key === 'extra' ? 'extra' : 'memories';
   return html`
     <div class="row-card photo-field" data-index="${idx}">
       <label class="photo-field__preview" for="${key}-input-${idx}">${photoPreview(p)}</label>
       <div class="photo-field__side">
-        <input class="sr-only" id="${key}-input-${idx}" type="file" accept="image/*" data-slot="${key}" data-index="${idx}">
+        <input class="sr-only" id="${key}-input-${idx}" type="file" accept="image/*" data-slot="${field}" data-index="${idx}">
         <label class="btn btn--small btn--ghost" for="${key}-input-${idx}">${p?.url ? 'Replace photo' : 'Choose a photo'}</label>
-        <input class="input" data-f="${key === 'extra' ? 'extra' : 'memories'}.${idx}.caption" value="${p?.caption || ''}" placeholder="a caption, in handwriting" aria-label="Photo caption">
+        <input class="input" data-f="${field}.${idx}.caption" value="${p?.caption || ''}" placeholder="a caption, in handwriting" aria-label="Photo caption">
       </div>
       <button type="button" class="row-card__remove icon-btn" data-action="remove-${key}" data-index="${idx}" aria-label="Remove this photo">${icon('x')}</button>
     </div>`;

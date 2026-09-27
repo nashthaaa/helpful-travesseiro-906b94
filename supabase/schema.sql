@@ -1,4 +1,4 @@
--- Sherbourne 8 — initial schema and starter content.
+-- Flat 61 — initial schema and starter content.
 -- Run once: Supabase dashboard → SQL Editor → New query → paste this whole
 -- file → Run. Safe to re-run (uses IF NOT EXISTS / ON CONFLICT DO NOTHING).
 

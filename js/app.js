@@ -14,7 +14,7 @@ import * as auth from './auth.js';
 import { mountHeaderAuth } from './auth-ui.js';
 
 const main = document.getElementById('main');
-const SITE = 'Sherbourne 8';
+const SITE = 'Flat 61';
 
 const routes = [
   [/^\/?$/, homeView, 'home'],

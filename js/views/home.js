@@ -13,7 +13,7 @@ export async function homeView() {
     ${editBar()}
 
     <section class="sheet" aria-labelledby="home-title">
-      <p class="bracket">[ the recipes we cooked at sherbourne 8, written down by the people who cooked them ]</p>
+      <p class="bracket">[ the recipes we cooked at flat 61, written down by the people who cooked them ]</p>
 
       <div class="hero">
         <div class="hero__text">

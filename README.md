@@ -1,4 +1,4 @@
-# Sherbourne 8 · The Kitchen Notebook
+# Flat 61 · The Kitchen Notebook
 
 A shared cookbook for a small group of friends. Static site, no build step:
 plain HTML, CSS and ES modules, with hash routing so it can be hosted anywhere

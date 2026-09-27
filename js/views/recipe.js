@@ -26,7 +26,12 @@ export async function recipeView({ params: [id] }) {
   const memoryIsHero = !r.photo && memories.length > 0;
   const asideMemory = memoryIsHero ? null : memories[0];
   const [, ...moreMemories] = memories; // page 3's leftovers, same list either way
-  const long = r.title.length > 26 ? 'display--long' : '';
+  // Shrink the title if it's long overall, OR if it has one unbroken run of
+  // characters long enough to force an ugly mid-word break at full size —
+  // "New Years'Cake!" (no space before "Cake") is exactly this case: not a
+  // long title by character count, but "Years'Cake!" alone doesn't fit.
+  const longestWord = Math.max(...r.title.split(/\s+/).map((w) => w.length));
+  const long = (r.title.length > 26 || longestWord > 10) ? 'display--long' : '';
   const cookBtn = html`<a class="btn" href="#/recipe/${r.id}/cook">${icon('pot')} Start cooking</a>`;
   const factsEnd = [r.servings ? `serves ${r.servings}` : '', r.category].filter(Boolean).join(' · ');
 

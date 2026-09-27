@@ -65,7 +65,7 @@ main:focus { outline: none; }
 .meta { font-size: .9rem; color: var(--ink-soft); line-height: 1.5; }
 .lede { font-size: 1.05rem; line-height: 1.75; max-width: 34rem; }
 
-.display { font-size: clamp(2.7rem, 1rem + 5.6vw, 5.6rem); font-weight: 500; line-height: 1.02; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.display { font-size: clamp(2.7rem, 1rem + 5.6vw, 5.6rem); font-weight: 500; line-height: 1.02; letter-spacing: -.025em; overflow-wrap: break-word; }
 .display--md { font-size: clamp(2.1rem, 1rem + 3.2vw, 3.6rem); line-height: 1.08; }
 .display--long { font-size: clamp(2.2rem, 1rem + 4vw, 4.2rem); }
 

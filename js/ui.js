@@ -186,7 +186,12 @@ export function print(photo, opts = {}) {
   const { seed = photo?.src || 'x', tilt = tiltFor(seed), tape = '', variant = '', ratio, cover = false, eager = false, sizes, caption = photo?.caption, phLabel, edit } = opts;
   let media;
   if (photo?.type === 'video' && photo?.src) {
-    media = html`<video src="${photo.src}" controls playsinline preload="metadata"${photo.w ? raw(` width="${photo.w}" height="${photo.h}"`) : ''}${ratio ? raw(` style="aspect-ratio:${ratio}${cover ? ';object-fit:cover' : ''}"`) : ''}></video>`;
+    // Never force a layout ratio onto a video the way a photo card can take —
+    // a portrait clip squeezed into a landscape box just shows as letterboxed
+    // black bars. Only actually crop it (cover) if a caller explicitly asks;
+    // otherwise let its own width/height decide the shape, same as a photo
+    // without `cover` does.
+    media = html`<video src="${photo.src}" controls playsinline preload="metadata"${photo.w ? raw(` width="${photo.w}" height="${photo.h}"`) : ''}${cover && ratio ? raw(` style="aspect-ratio:${ratio};object-fit:cover"`) : ''}></video>`;
   } else if (photo?.src) {
     media = html`<img src="${photo.src}" alt="${photo.alt || caption || ''}"${photo.w ? raw(` width="${photo.w}" height="${photo.h}"`) : ''}${cover && ratio ? raw(` style="aspect-ratio:${ratio};object-fit:cover"`) : ''} ${eager ? raw('fetchpriority="high"') : raw('loading="lazy"')} decoding="async"${sizes ? raw(` sizes="${str(sizes)}"`) : ''}>`;
   } else {

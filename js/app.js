@@ -68,8 +68,9 @@ async function show(id, view, ctx, name) {
   current?.unmount?.();
   current = null;
   let result;
+  const signedOut = !auth.isSignedIn();
   try {
-    result = auth.isSignedIn() ? await view(ctx) : signedOutGate();
+    result = signedOut ? signedOutGate() : await view(ctx);
   } catch (err) {
     console.error(err);
     result = {
@@ -84,7 +85,7 @@ async function show(id, view, ctx, name) {
   }
   if (id !== renderId) return; // a newer navigation won the race
 
-  document.body.dataset.view = name;
+  document.body.dataset.view = signedOut ? 'locked' : name;
   document.body.classList.remove('is-editing');
   document.title = result.title ? `${result.title} · ${SITE}` : `${SITE} · The Kitchen Notebook`;
   main.innerHTML = str(result.body);

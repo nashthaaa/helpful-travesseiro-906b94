@@ -119,6 +119,10 @@ main:focus { outline: none; }
 body[data-view='cook'] { background: var(--paper); }
 body[data-view='cook'] .site-header, body[data-view='cook'] .site-footer { display: none; }
 
+body[data-view='locked'] .site-header, body[data-view='locked'] .site-footer { display: none; }
+body[data-view='locked'] main { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+body[data-view='locked'] .sheet { margin: var(--gutter) auto; }
+
 /* small bar above the page: where you are, and the handwriting switch */
 .pagebar { width: var(--sheet-w); margin: -8px auto 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 1.5rem; }
 .pagebar__side { display: flex; align-items: center; gap: 0 1.6rem; }

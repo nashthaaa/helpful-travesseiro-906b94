@@ -33,7 +33,7 @@ export async function editorView({ params: [initialId] }) {
         <section class="sheet sheet--short" aria-labelledby="ed-title">
           <p class="label">${id ? 'Editing a recipe' : 'A new page in the notebook'}</p>
           <h1 class="display display--md" id="ed-title">${id ? 'Sign in to edit' : 'Sign in to add a recipe'}</h1>
-          ${signInPanel('anyone in the kitchen can browse — signing in is just for adding and editing.')}
+          ${signInPanel('sign in with the kitchen password to come in.')}
         </section>
       </div>`;
     return { title: id ? 'Edit recipe' : 'Add a recipe', body, mount: mountSignInPanel };

@@ -11,7 +11,7 @@ import { cookView } from './views/cook.js';
 import { editorView } from './views/editor.js';
 import { notFoundView } from './views/misc.js';
 import * as auth from './auth.js';
-import { mountHeaderAuth } from './auth-ui.js';
+import { mountHeaderAuth, signInPanel, mountSignInPanel } from './auth-ui.js';
 
 const main = document.getElementById('main');
 const SITE = 'Flat 61';
@@ -48,12 +48,27 @@ async function render() {
   return show(id, notFoundView, { params: [], query, path }, 'none');
 }
 
+// The whole cookbook is private: nothing renders — not even a recipe title —
+// until someone's signed in with the shared kitchen password.
+function signedOutGate() {
+  return {
+    title: 'Sign in',
+    body: html`
+      <section class="sheet sheet--short" aria-labelledby="gate-title">
+        <p class="label">Flat 61 · The Kitchen Notebook</p>
+        <h1 class="display display--md" id="gate-title">This kitchen is locked.</h1>
+        ${signInPanel("sign in with the kitchen password to come in.")}
+      </section>`,
+    mount: mountSignInPanel,
+  };
+}
+
 async function show(id, view, ctx, name) {
   current?.unmount?.();
   current = null;
   let result;
   try {
-    result = await view(ctx);
+    result = auth.isSignedIn() ? await view(ctx) : signedOutGate();
   } catch (err) {
     console.error(err);
     result = {

@@ -487,3 +487,9 @@ textarea.input { border: 1.5px solid var(--ink); padding: .7rem .8rem; resize: v
 
 .ed-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem 1.5rem; }
 .save-status { font-size: .85rem; color: var(--ink-soft); min-height: 1.4em; }
+
+/* ---------- the locked-out gate ---------- */
+
+.gate { text-align: center; }
+.locked-graphic { width: clamp(84px, 16vw, 120px); height: auto; color: var(--blue); display: block; margin: 0 auto 1.6rem; transform: rotate(-2deg); }
+.gate .signin { margin: 1.8rem auto 0; text-align: left; }

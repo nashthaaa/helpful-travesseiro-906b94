@@ -128,6 +128,21 @@ export const icon = (name, cls = '') => raw(
   `<svg class="icon ${cls}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICONS[name]}</svg>`
 );
 
+// A closed notebook with a padlock on it — drawn in the same hand-drawn blue
+// ink as everything else, for the "sign in to come in" gate.
+export const lockedGraphic = () => raw(`
+  <svg class="locked-graphic" viewBox="0 0 140 140" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    <rect x="26" y="32" width="88" height="82" rx="5"/>
+    <line x1="41" y1="32" x2="41" y2="114"/>
+    <line x1="52" y1="46" x2="100" y2="46" stroke-width="2" opacity=".45"/>
+    <line x1="52" y1="102" x2="88" y2="102" stroke-width="2" opacity=".45"/>
+    <path d="M58 63 a12 12 0 0 1 24 0 v8"/>
+    <rect x="54" y="63" width="32" height="27" rx="4" fill="var(--paper)"/>
+    <circle cx="70" cy="74" r="3" fill="currentColor" stroke="none"/>
+    <line x1="70" y1="77" x2="70" y2="83" stroke-width="3.2"/>
+    <path d="M102 44 l7 -7M102 28 l7 -7" stroke-width="2.2"/>
+  </svg>`);
+
 /* ---------- editable handwriting ---------- */
 
 // Marks an element as click-to-edit while "Edit handwriting" is switched on.

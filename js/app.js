@@ -3,7 +3,7 @@
 //
 // A view is `async (ctx) => ({ title, body, mount?(root), unmount?() })`.
 
-import { html, str, icon } from './ui.js';
+import { html, str, icon, lockedGraphic } from './ui.js';
 import { homeView } from './views/home.js';
 import { collectionView } from './views/collection.js';
 import { recipeView } from './views/recipe.js';
@@ -54,7 +54,8 @@ function signedOutGate() {
   return {
     title: 'Sign in',
     body: html`
-      <section class="sheet sheet--short" aria-labelledby="gate-title">
+      <section class="sheet sheet--short gate" aria-labelledby="gate-title">
+        ${lockedGraphic()}
         <p class="label">Flat 61 · The Kitchen Notebook</p>
         <h1 class="display display--md" id="gate-title">This kitchen is locked.</h1>
         ${signInPanel("sign in with the kitchen password to come in.")}

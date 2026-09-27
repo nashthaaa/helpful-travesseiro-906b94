@@ -1,6 +1,6 @@
-// "Edit handwriting": switch it on and every handwritten line on the page
-// (quotes, notes, captions) becomes click-to-edit. Nothing else on the page
-// changes, so the pages stay uncluttered when you are just reading.
+// "Edit this page": switch it on and every piece of writing on the page —
+// handwritten quotes and notes, and the typed title/tagline/heading text —
+// becomes click-to-edit. Off, the page stays exactly as spacious as reading it.
 
 import { html, str, icon } from './ui.js';
 import { updateRecipeField, updateSetting } from './store.js';
@@ -12,9 +12,9 @@ export const editBar = (left = '', right = '') => html`
     <div class="pagebar__side">${left}</div>
     <div class="pagebar__side">
       ${right}
-      <button type="button" class="edit-toggle" data-edit-toggle aria-pressed="false">${icon('pencil')}<span>Edit handwriting</span></button>
+      <button type="button" class="edit-toggle" data-edit-toggle aria-pressed="false">${icon('pencil')}<span>Edit this page</span></button>
     </div>
-    <p class="pagebar__note" data-edit-note hidden>Tap any handwriting to change it — it's saved for everyone.</p>
+    <p class="pagebar__note" data-edit-note hidden>Tap any dashed text to change it — it's saved for everyone.</p>
     <div class="pagebar__signin" data-edit-signin hidden></div>
   </div>`;
 
@@ -44,7 +44,7 @@ export function setupEditing(root) {
     signinSlot.hidden = true;
     document.body.classList.toggle('is-editing', on);
     toggle.setAttribute('aria-pressed', String(on));
-    label.textContent = on ? 'Done editing' : 'Edit handwriting';
+    label.textContent = on ? 'Done editing' : 'Edit this page';
     note.hidden = !on;
     for (const el of targets()) {
       if (on) {
@@ -64,8 +64,9 @@ export function setupEditing(root) {
     const [scope, path] = el.dataset.edit.split('|');
     const form = document.createElement('form');
     form.className = 'inline-edit';
+    form.classList.toggle('inline-edit--hand', el.classList.contains('hand'));
     form.innerHTML = `
-      <label class="sr-only" for="inline-edit-text">Edit this handwriting</label>
+      <label class="sr-only" for="inline-edit-text">Edit this text</label>
       <textarea id="inline-edit-text" rows="3" maxlength="400"></textarea>
       <div class="inline-edit__row">
         <button class="btn btn--small" type="submit">Save</button>
@@ -99,7 +100,7 @@ export function setupEditing(root) {
 
   toggle.addEventListener('click', () => {
     if (!on && !isSignedIn()) {
-      signinSlot.innerHTML = str(signInPanel('sign in to edit the handwriting on this page.'));
+      signinSlot.innerHTML = str(signInPanel('sign in to edit the text on this page.'));
       signinSlot.hidden = false;
       mountSignInPanel(signinSlot);
       return;

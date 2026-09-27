@@ -45,7 +45,7 @@ export async function collectionView({ query }) {
 
     <section class="sheet" aria-labelledby="coll-title">
       <p class="bracket">[ ${all.length} ${all.length === 1 ? 'recipe' : 'recipes'}, cooked by ${cooks.length} ${cooks.length === 1 ? 'person' : 'people'} ]</p>
-      <h1 class="display" id="coll-title">All the<br>recipes</h1>
+      <h1 class="display" id="coll-title" style="white-space:pre-line" ${ed('site', 'collectionTitle', 'a heading for this page')}>${settings.collectionTitle}</h1>
       <p class="hand hand--lg coll-hand" ${ed('site', 'collectionIntro', 'a line for this page')}>${settings.collectionIntro}</p>
 
       <form class="finder" role="search" aria-label="Search the recipes" autocomplete="off">

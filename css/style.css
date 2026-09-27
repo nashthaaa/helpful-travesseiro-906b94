@@ -73,7 +73,9 @@ main:focus { outline: none; }
 .hand--lg { font-size: clamp(1.9rem, 1.3rem + 2vw, 3.1rem); line-height: 1.12; }
 
 .bracket { text-align: center; font-size: .82rem; line-height: 1.55; max-width: 34rem; margin: 0 auto clamp(40px, 7vw, 88px); text-wrap: balance; }
-.bracket--left { text-align: left; margin: 0 0 1.6rem; font-size: .9rem; max-width: none; }
+.bracket--left { text-align: left; margin: 0 0 1.6rem; font-size: .9rem; max-width: none; text-transform: lowercase; }
+.bracket--left:has(span:empty) { display: none; }
+.is-editing .bracket--left:has(span:empty) { display: block; }
 
 /* ---------- buttons & links ---------- */
 
@@ -151,7 +153,7 @@ body[data-view='cook'] .site-header, body[data-view='cook'] .site-footer { displ
    --plain: no border, just a hairline blue frame, like the drawings in the notebook.
    --polaroid: the one taped-down snapshot per page. */
 .print { --tilt: 0deg; position: relative; background: var(--print); padding: 7px; transform: rotate(var(--tilt)); box-shadow: 0 1px 2px rgba(20, 35, 70, .18), 0 12px 24px -14px rgba(20, 35, 70, .4); }
-.print img { display: block; width: 100%; }
+.print img, .print video { display: block; width: 100%; background: #000; }
 .print figcaption { font-family: var(--font-hand); color: var(--blue); text-transform: uppercase; font-size: 1.4rem; line-height: 1.15; letter-spacing: .02em; padding: .7rem .3rem .3rem; }
 .print--plain { background: none; padding: 0; box-shadow: none; transform: none; outline: 1px solid var(--blue-faint); outline-offset: 8px; margin: 8px; }
 .print--plain:has(.ph) { outline: none; }
@@ -182,7 +184,8 @@ body[data-view='cook'] .site-header, body[data-view='cook'] .site-footer { displ
 .is-editing a { cursor: default; }
 
 .inline-edit { display: grid; gap: .7rem; margin: .4rem 0; max-width: 34rem; }
-.inline-edit textarea { width: 100%; min-height: 6rem; padding: .7rem .9rem; font-family: var(--font-hand); font-size: 1.8rem; line-height: 1.2; text-transform: uppercase; color: var(--blue); background: rgba(255, 255, 255, .7); border: 2px solid var(--blue); border-radius: 2px; resize: vertical; }
+.inline-edit textarea { width: 100%; min-height: 5rem; padding: .7rem .9rem; font-family: var(--font-type); font-size: 1.1rem; line-height: 1.4; color: var(--ink); background: rgba(255, 255, 255, .7); border: 2px solid var(--ink); border-radius: 2px; resize: vertical; }
+.inline-edit--hand textarea { min-height: 6rem; font-family: var(--font-hand); font-size: 1.8rem; line-height: 1.2; text-transform: uppercase; color: var(--blue); border-color: var(--blue); }
 .inline-edit__row { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
 .inline-edit__msg { font-size: .85rem; color: var(--terra); }
 
@@ -450,7 +453,7 @@ textarea.input { border: 1.5px solid var(--ink); padding: .7rem .8rem; resize: v
 
 .photo-field { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1.2rem; }
 .photo-field__preview { display: block; width: 7rem; aspect-ratio: 1; background: var(--print); border: 1.5px solid var(--line); cursor: pointer; overflow: hidden; }
-.photo-field__preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-field__preview img, .photo-field__preview video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .photo-field__empty { width: 100%; height: 100%; display: grid; place-items: center; color: var(--ink-soft); }
 .photo-field__side { flex: 1 1 14rem; min-width: 12rem; display: grid; gap: .7rem; align-content: start; }
 .photo-field .input { max-width: 22rem; }
@@ -481,3 +484,6 @@ textarea.input { border: 1.5px solid var(--ink); padding: .7rem .8rem; resize: v
 
 .part-label { margin: 2.6rem 0 .5rem; font-size: .8rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); }
 .part-label + .ing, .part-label + .steps { margin-top: 0; }
+
+.ed-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem 1.5rem; }
+.save-status { font-size: .85rem; color: var(--ink-soft); min-height: 1.4em; }

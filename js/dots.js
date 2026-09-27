@@ -2,7 +2,7 @@
 // from wherever you touch it — the homepage collage's treatment, reusable
 // anywhere a food photo should feel drawn rather than printed.
 
-import { html, raw, placeholder, ed } from './ui.js';
+import { html, raw, placeholder, ed, print } from './ui.js';
 import { stipple } from './stipple.js';
 
 // The dotted photo itself: a canvas drawn live from `photo`, with the real
@@ -20,8 +20,10 @@ export function dotsMedia(photo, { seed = photo?.src || 'x', zoom = 1, px = 50, 
 }
 
 // A print()-style figure (tilt, tape, caption, click-to-edit caption) whose
-// photo is dotted-with-reveal instead of plain.
+// photo is dotted-with-reveal instead of plain. A video can't be stippled —
+// falls back to a plain inline player, same frame and caption around it.
 export function dottedPrint(photo, opts = {}) {
+  if (photo?.type === 'video') return print(photo, opts);
   const { seed = photo?.src || 'x', tilt = 0, tape = '', variant = '', ratio, zoom = 1, px = 50, py = 50, caption = photo?.caption, phLabel, edit } = opts;
   const media = dotsMedia(photo, { seed, zoom, px, py, ratio: ratio || (photo?.w && photo?.h ? photo.w / photo.h : 0.8), phLabel });
   return html`<figure class="print ${variant}" style="--tilt:${tilt}deg">${tape ? raw(`<span class="tape tape--${tape}" aria-hidden="true"></span>`) : ''}${media}${caption || edit ? html`<figcaption ${edit ? ed(edit.scope, edit.path, edit.ph || 'add a caption') : ''}>${caption || ''}</figcaption>` : ''}</figure>`;

@@ -180,10 +180,17 @@ export function placeholder(seed, ratio = 0.8, label = 'photo to come') {
 }
 
 // <figure class="print"> with the optional tape / tilt / caption treatments.
+// A video plays inline with controls instead of showing as a photo — it
+// still gets the same paper-print frame, tape and caption around it.
 export function print(photo, opts = {}) {
   const { seed = photo?.src || 'x', tilt = tiltFor(seed), tape = '', variant = '', ratio, cover = false, eager = false, sizes, caption = photo?.caption, phLabel, edit } = opts;
-  const media = photo?.src
-    ? html`<img src="${photo.src}" alt="${photo.alt || caption || ''}"${photo.w ? raw(` width="${photo.w}" height="${photo.h}"`) : ''}${cover && ratio ? raw(` style="aspect-ratio:${ratio};object-fit:cover"`) : ''} ${eager ? raw('fetchpriority="high"') : raw('loading="lazy"')} decoding="async"${sizes ? raw(` sizes="${str(sizes)}"`) : ''}>`
-    : placeholder(seed, ratio || 0.8, phLabel);
+  let media;
+  if (photo?.type === 'video' && photo?.src) {
+    media = html`<video src="${photo.src}" controls playsinline preload="metadata"${photo.w ? raw(` width="${photo.w}" height="${photo.h}"`) : ''}${ratio ? raw(` style="aspect-ratio:${ratio}${cover ? ';object-fit:cover' : ''}"`) : ''}></video>`;
+  } else if (photo?.src) {
+    media = html`<img src="${photo.src}" alt="${photo.alt || caption || ''}"${photo.w ? raw(` width="${photo.w}" height="${photo.h}"`) : ''}${cover && ratio ? raw(` style="aspect-ratio:${ratio};object-fit:cover"`) : ''} ${eager ? raw('fetchpriority="high"') : raw('loading="lazy"')} decoding="async"${sizes ? raw(` sizes="${str(sizes)}"`) : ''}>`;
+  } else {
+    media = placeholder(seed, ratio || 0.8, phLabel);
+  }
   return html`<figure class="print ${variant}" style="--tilt:${tilt}deg">${tape ? raw(`<span class="tape tape--${tape}" aria-hidden="true"></span>`) : ''}${media}${caption || edit ? html`<figcaption ${edit ? ed(edit.scope, edit.path, edit.ph || 'add a caption') : ''}>${caption || ''}</figcaption>` : ''}</figure>`;
 }

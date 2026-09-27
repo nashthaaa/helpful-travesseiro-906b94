@@ -1,24 +1,29 @@
 // The recipe form: add a new recipe, or change anything about an existing
-// one — text, ingredients, steps, and every photo. Shared with everyone via
-// Supabase; only signed-in friends can use it.
+// one — text, ingredients, steps, and every photo or video. Shared with
+// everyone via Supabase; only signed-in friends can use it. Saves itself as
+// you go, so leaving half-finished and coming back later just works.
 
 import { html, str, icon, cap, CATEGORIES, setPath } from '../ui.js';
 import { getRecipe, saveRecipe, deleteRecipe } from '../store.js';
-import * as photos from '../imagestore.js';
+import * as media from '../imagestore.js';
 import { isSignedIn } from '../auth.js';
 import { signInPanel, mountSignInPanel } from '../auth-ui.js';
 
 const YOU_KEY = 'sb8:you';
+const AUTOSAVE_MS = 1200;
 const emptyIngredient = (group = '') => ({ amount: '', unit: '', item: '', note: '', group });
 const emptyStep = (group = '') => ({ text: '', group });
-const emptyPhoto = () => ({ src: '', url: '', w: null, h: null, caption: '' });
+const emptyMedia = () => ({ src: '', url: '', w: null, h: null, type: 'image', caption: '' });
 const lastGroup = (rows) => rows[rows.length - 1]?.group || '';
 
-// A photo already on the recipe, ready to preview — its "src" is already a
-// showable URL, whether it's an upload or one of the original mockup photos.
-const withPreview = (p) => (p?.src ? { src: p.src, url: p.src, w: p.w || null, h: p.h || null, caption: p.caption || '' } : null);
+// A photo or video already on the recipe, ready to preview — its "src" is
+// already a showable URL, whether it's an upload or one of the original
+// mockup photos.
+const withPreview = (p) => (p?.src ? { src: p.src, url: p.src, w: p.w || null, h: p.h || null, type: p.type === 'video' ? 'video' : 'image', caption: p.caption || '' } : null);
 
-export async function editorView({ params: [id] }) {
+export async function editorView({ params: [initialId] }) {
+  let id = initialId; // reassigned once autosave creates a brand-new recipe
+
   // Check sign-in before touching the database at all, so this gate shows
   // up front — never a "recipe not found" or connection error underneath it.
   if (!isSignedIn()) {
@@ -61,10 +66,15 @@ export async function editorView({ params: [id] }) {
       <p class="crumbs"><a href="${id ? `#/recipe/${id}` : '#/recipes'}">${icon('left')} ${id ? 'Back to the recipe' : 'All recipes'}</a></p>
 
       <section class="sheet" aria-labelledby="ed-title">
-        <p class="label">${id ? 'Editing' : 'A new page in the notebook'}</p>
-        <h1 class="display display--md" id="ed-title">${id ? 'Edit recipe' : 'Add a recipe'}</h1>
+        <div class="ed-head">
+          <div>
+            <p class="label">${id ? 'Editing' : 'A new page in the notebook'}</p>
+            <h1 class="display display--md" id="ed-title">${id ? 'Edit recipe' : 'Add a recipe'}</h1>
+          </div>
+          <p class="save-status" id="save-status" role="status" aria-live="polite"></p>
+        </div>
         ${existing?.sample ? html`<p class="stamp">This is a sample recipe — saving will replace it with yours.</p>` : ''}
-        <p class="lede">Saved here, everyone in the kitchen sees it. Save any time, even half-finished — come back to "Edit recipe" later to carry on.</p>
+        <p class="lede">Saves itself as you go, for everyone in the kitchen. Give it a name to start, then leave and come back to "Edit recipe" whenever.</p>
 
         <form class="form" novalidate>
           <div class="field-row field-row--2">
@@ -130,22 +140,22 @@ export async function editorView({ params: [id] }) {
           </div>
 
           <div class="field">
-            <p class="label">More photos</p>
-            <div id="extra-rows" class="rows">${state.extra.map((p, idx) => renderPhotoRow('extra', p, idx))}</div>
-            <button type="button" class="add-row" data-action="add-extra">${icon('plus')} Add a photo</button>
+            <p class="label">More photos &amp; videos</p>
+            <div id="extra-rows" class="rows">${state.extra.map((p, idx) => renderMediaRow('extra', p, idx))}</div>
+            <button type="button" class="add-row" data-action="add-extra">${icon('plus')} Add a photo or video</button>
           </div>
 
           <div class="field">
             <p class="label">Memories — the people who made it, if not the food itself</p>
-            <div id="memory-rows" class="rows">${state.memories.map((p, idx) => renderPhotoRow('memory', p, idx))}</div>
-            <button type="button" class="add-row" data-action="add-memory">${icon('plus')} Add a memory</button>
+            <div id="memory-rows" class="rows">${state.memories.map((p, idx) => renderMediaRow('memory', p, idx))}</div>
+            <button type="button" class="add-row" data-action="add-memory">${icon('plus')} Add a photo or video</button>
           </div>
 
           <p class="form-msg" id="form-msg" role="alert" hidden></p>
 
           <div class="actions">
-            <button class="btn" type="submit">Save recipe</button>
-            <a class="btn btn--ghost" href="${id ? `#/recipe/${id}` : '#/recipes'}">Cancel</a>
+            <a class="btn" href="${id ? `#/recipe/${id}` : '#/recipes'}">Done — view recipe</a>
+            <button type="button" class="btn btn--ghost" id="save-now">Save now</button>
             ${id ? html`<button type="button" class="linklike danger" id="delete-btn" data-action="delete">Delete this recipe</button>` : ''}
           </div>
         </form>
@@ -154,7 +164,10 @@ export async function editorView({ params: [id] }) {
 
   function mount(root) {
     const form = root.querySelector('form');
+    form.addEventListener('submit', (e) => e.preventDefault()); // belt-and-suspenders: nothing should ever navigate this away
     const msg = root.querySelector('#form-msg');
+    const status = root.querySelector('#save-status');
+    const doneLink = root.querySelector('.actions a.btn');
     const showMsg = (text, focusEl) => { msg.textContent = text; msg.hidden = false; msg.scrollIntoView({ block: 'center', behavior: 'smooth' }); focusEl?.focus(); };
 
     const sections = {
@@ -166,11 +179,75 @@ export async function editorView({ params: [id] }) {
     const renderers = {
       ingredients: () => state.ingredients.map((i, idx) => renderIngredient(i, idx)),
       steps: () => state.steps.map((s, idx) => renderStep(s, idx)),
-      extra: () => state.extra.map((p, idx) => renderPhotoRow('extra', p, idx)),
-      memories: () => state.memories.map((p, idx) => renderPhotoRow('memory', p, idx)),
+      extra: () => state.extra.map((p, idx) => renderMediaRow('extra', p, idx)),
+      memories: () => state.memories.map((p, idx) => renderMediaRow('memory', p, idx)),
     };
     const refresh = (key) => { sections[key].innerHTML = str(renderers[key]()); };
     const refreshMain = () => { root.querySelector('#photo-main').innerHTML = str(renderMainPhoto(state.photo)); };
+
+    // ---------- build + save (shared by autosave and the manual button) ----------
+
+    function buildData() {
+      const clean = (p) => (p?.src ? { src: p.src, w: p.w || undefined, h: p.h || undefined, type: p.type === 'video' ? 'video' : undefined, caption: p.caption.trim() || undefined } : null);
+      return {
+        title: state.title.trim(),
+        contributor: state.contributor.trim() || 'Someone in the kitchen',
+        category: state.category,
+        tagline: state.tagline.trim() || undefined,
+        servings: state.servings === '' ? undefined : +state.servings,
+        quote: state.quote.trim() || undefined,
+        note: state.note.text.trim() ? { text: state.note.text.trim(), by: state.note.by.trim() || undefined } : undefined,
+        ingredients: state.ingredients
+          .map((i) => ({ amount: i.amount === '' ? null : Number(i.amount), unit: (i.unit || '').trim(), item: (i.item || '').trim(), note: (i.note || '').trim(), group: (i.group || '').trim() || undefined }))
+          .filter((i) => i.item),
+        steps: state.steps
+          .map((s) => ({ text: s.text.trim(), group: (s.group || '').trim() || undefined }))
+          .filter((s) => s.text),
+        photo: clean(state.photo),
+        photos: state.extra.map(clean).filter(Boolean),
+        memories: state.memories.map(clean).filter(Boolean),
+        sample: false,
+      };
+    }
+
+    let saving = false, pending = false, timer = null;
+
+    async function saveNow() {
+      if (!state.title.trim()) { status.textContent = ''; return; }
+      if (saving) { pending = true; return; }
+      saving = true;
+      status.textContent = 'Saving…';
+      try { localStorage.setItem(YOU_KEY, state.contributor.trim() || ''); } catch { /* private mode: fine */ }
+      const savedId = await saveRecipe(id, buildData());
+      saving = false;
+      if (!savedId) {
+        status.textContent = "Couldn't save — check your connection.";
+      } else {
+        if (!id) {
+          // First save of a new recipe: now it has a real id. Swap the URL in
+          // place (no navigation, so typing isn't interrupted) and point the
+          // "done" / delete links at it from now on.
+          id = savedId;
+          history.replaceState(null, '', `#/edit/${id}`);
+          doneLink.href = `#/recipe/${id}`;
+          root.querySelector('.crumbs a').href = `#/recipe/${id}`;
+          if (!root.querySelector('#delete-btn')) {
+            const del = document.createElement('button');
+            del.type = 'button'; del.className = 'linklike danger'; del.id = 'delete-btn'; del.dataset.action = 'delete';
+            del.textContent = 'Delete this recipe';
+            root.querySelector('.actions').appendChild(del);
+          }
+        }
+        status.textContent = 'Saved just now.';
+      }
+      if (pending) { pending = false; saveNow(); }
+    }
+
+    function scheduleAutosave() {
+      status.textContent = state.title.trim() ? 'Saving…' : '';
+      clearTimeout(timer);
+      timer = setTimeout(saveNow, AUTOSAVE_MS);
+    }
 
     // Typing updates `state` directly; the input the person is looking at
     // already shows what they typed, so nothing needs to re-render here.
@@ -180,16 +257,21 @@ export async function editorView({ params: [id] }) {
       const path = el.dataset.f;
       const value = el.type === 'number' ? (el.value === '' ? '' : +el.value) : el.value;
       setPath(state, path, value);
+      scheduleAutosave();
+    });
+    form.addEventListener('change', (e) => {
+      if (e.target.matches('select[data-f]')) scheduleAutosave();
     });
 
-    async function pickPhoto(file, slot) {
+    async function pickMedia(file, slot) {
       msg.hidden = true;
       try {
-        const img = await photos.put(file);
-        if (slot.old && photos.isUploaded(slot.old)) await photos.remove(slot.old);
-        slot.set({ src: img.url, url: img.url, w: img.w, h: img.h, caption: slot.caption });
+        const uploaded = await media.put(file);
+        if (slot.old && media.isUploaded(slot.old)) await media.remove(slot.old);
+        slot.set({ src: uploaded.url, url: uploaded.url, w: uploaded.w, h: uploaded.h, type: uploaded.type, caption: slot.caption });
+        scheduleAutosave();
       } catch (err) {
-        showMsg(err.message || "That photo couldn't be used.");
+        showMsg(err.message || "That file couldn't be used.");
       }
     }
 
@@ -200,11 +282,11 @@ export async function editorView({ params: [id] }) {
       if (!file) return;
       input.disabled = true;
       if (input.dataset.slot === 'main') {
-        await pickPhoto(file, { old: state.photo?.src, caption: state.photo?.caption || '', set: (p) => { state.photo = p; refreshMain(); } });
+        await pickMedia(file, { old: state.photo?.src, caption: state.photo?.caption || '', set: (p) => { state.photo = p; refreshMain(); } });
       } else {
         const [key, i] = [input.dataset.slot, +input.dataset.index];
         const row = state[key][i];
-        await pickPhoto(file, { old: row.src, caption: row.caption, set: (p) => { state[key][i] = p; refresh(key); } });
+        await pickMedia(file, { old: row.src, caption: row.caption, set: (p) => { state[key][i] = p; refresh(key); } });
       }
       input.disabled = false;
     });
@@ -216,62 +298,33 @@ export async function editorView({ params: [id] }) {
       const i = btn.dataset.index != null ? +btn.dataset.index : null;
 
       if (action === 'add-ingredient') { state.ingredients.push(emptyIngredient(lastGroup(state.ingredients))); refresh('ingredients'); root.querySelector(`#ing-rows [data-index="${state.ingredients.length - 1}"] input`)?.focus(); }
-      else if (action === 'remove-ingredient') { if (state.ingredients.length > 1) { state.ingredients.splice(i, 1); refresh('ingredients'); } }
+      else if (action === 'remove-ingredient') { if (state.ingredients.length > 1) { state.ingredients.splice(i, 1); refresh('ingredients'); scheduleAutosave(); } }
       else if (action === 'add-step') { state.steps.push(emptyStep(lastGroup(state.steps))); refresh('steps'); root.querySelector(`#step-rows [data-index="${state.steps.length - 1}"] textarea`)?.focus(); }
-      else if (action === 'remove-step') { if (state.steps.length > 1) { state.steps.splice(i, 1); refresh('steps'); } }
-      else if (action === 'add-extra') { state.extra.push(emptyPhoto()); refresh('extra'); }
-      else if (action === 'remove-extra') { const [p] = state.extra.splice(i, 1); if (p?.src && photos.isUploaded(p.src)) await photos.remove(p.src); refresh('extra'); }
-      else if (action === 'add-memory') { state.memories.push(emptyPhoto()); refresh('memories'); }
-      else if (action === 'remove-memory') { const [p] = state.memories.splice(i, 1); if (p?.src && photos.isUploaded(p.src)) await photos.remove(p.src); refresh('memories'); }
-      else if (action === 'remove-main') { if (state.photo?.src && photos.isUploaded(state.photo.src)) await photos.remove(state.photo.src); state.photo = null; refreshMain(); }
+      else if (action === 'remove-step') { if (state.steps.length > 1) { state.steps.splice(i, 1); refresh('steps'); scheduleAutosave(); } }
+      else if (action === 'add-extra') { state.extra.push(emptyMedia()); refresh('extra'); }
+      else if (action === 'remove-extra') { const [p] = state.extra.splice(i, 1); if (p?.src && media.isUploaded(p.src)) await media.remove(p.src); refresh('extra'); scheduleAutosave(); }
+      else if (action === 'add-memory') { state.memories.push(emptyMedia()); refresh('memories'); }
+      else if (action === 'remove-memory') { const [p] = state.memories.splice(i, 1); if (p?.src && media.isUploaded(p.src)) await media.remove(p.src); refresh('memories'); scheduleAutosave(); }
+      else if (action === 'remove-main') { if (state.photo?.src && media.isUploaded(state.photo.src)) await media.remove(state.photo.src); state.photo = null; refreshMain(); scheduleAutosave(); }
       else if (action === 'delete') {
-        if (btn.dataset.confirm) { await deleteRecipe(id); location.hash = '#/recipes'; }
+        if (btn.dataset.confirm) { clearTimeout(timer); if (id) await deleteRecipe(id); location.hash = '#/recipes'; }
         else { btn.dataset.confirm = '1'; btn.textContent = 'Click again to delete for good'; }
       }
     });
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      msg.hidden = true;
-      const title = state.title.trim();
-      if (!title) return showMsg('Give the recipe a name.', root.querySelector('#f-title'));
-      // Everything else is optional — save anytime, even half-finished, and
-      // pick up where you left off later from "Edit recipe".
-      const ingredients = state.ingredients
-        .map((i) => ({ amount: i.amount === '' ? null : Number(i.amount), unit: (i.unit || '').trim(), item: (i.item || '').trim(), note: (i.note || '').trim(), group: (i.group || '').trim() || undefined }))
-        .filter((i) => i.item);
-      const steps = state.steps
-        .map((s) => ({ text: s.text.trim(), group: (s.group || '').trim() || undefined }))
-        .filter((s) => s.text);
-
-      const contributor = state.contributor.trim() || 'Someone in the kitchen';
-      try { localStorage.setItem(YOU_KEY, contributor); } catch { /* private mode: fine */ }
-
-      const clean = (p) => (p?.src ? { src: p.src, w: p.w || undefined, h: p.h || undefined, caption: p.caption.trim() || undefined } : null);
-      const data = {
-        title, contributor,
-        category: state.category,
-        tagline: state.tagline.trim() || undefined,
-        servings: state.servings === '' ? undefined : +state.servings,
-        quote: state.quote.trim() || undefined,
-        note: state.note.text.trim() ? { text: state.note.text.trim(), by: state.note.by.trim() || undefined } : undefined,
-        ingredients, steps,
-        photo: clean(state.photo),
-        photos: state.extra.map(clean).filter(Boolean).map(({ w, h, caption, src }) => ({ src, w, h, caption })),
-        memories: state.memories.map(clean).filter(Boolean).map(({ w, h, caption, src }) => ({ src, w, h, caption })),
-        sample: false,
-      };
-
-      const submitBtn = form.querySelector('button[type=submit]');
-      submitBtn.disabled = true;
-      const savedId = await saveRecipe(id, data);
-      submitBtn.disabled = false;
-      if (!savedId) return showMsg("That couldn't be saved. Try again.");
-      location.hash = `#/recipe/${savedId}`;
+    root.querySelector('#save-now').addEventListener('click', () => {
+      if (!state.title.trim()) return showMsg('Give the recipe a name first.', root.querySelector('#f-title'));
+      clearTimeout(timer);
+      saveNow();
     });
+
+    // A tab close / navigation shouldn't lose the last few keystrokes.
+    const onLeave = () => { if (timer) { clearTimeout(timer); saveNow(); } };
+    window.addEventListener('beforeunload', onLeave);
+    mount.off = () => { window.removeEventListener('beforeunload', onLeave); clearTimeout(timer); };
   }
 
-  return { title: id ? `Edit ${existing.title}` : 'Add a recipe', body, mount };
+  return { title: id ? `Edit ${existing.title}` : 'Add a recipe', body, mount, unmount: () => mount.off?.() };
 }
 
 function renderIngredient(i, idx) {
@@ -297,7 +350,8 @@ function renderStep(s, idx) {
     </div>`;
 }
 
-function photoPreview(p) {
+function mediaPreview(p) {
+  if (p?.type === 'video' && p.url) return html`<video src="${p.url}" muted playsinline></video>`;
   if (p?.url) return html`<img src="${p.url}" alt="">`;
   return html`<span class="photo-field__empty">${icon('plus')}</span>`;
 }
@@ -305,7 +359,7 @@ function photoPreview(p) {
 function renderMainPhoto(p) {
   return html`
     <div class="photo-field">
-      <label class="photo-field__preview" for="photo-main-input">${photoPreview(p)}</label>
+      <label class="photo-field__preview" for="photo-main-input">${mediaPreview(p)}</label>
       <div class="photo-field__side">
         <input class="sr-only" id="photo-main-input" type="file" accept="image/*" data-slot="main">
         <label class="btn btn--small btn--ghost" for="photo-main-input">${p?.url ? 'Replace photo' : 'Choose a photo'}</label>
@@ -315,20 +369,20 @@ function renderMainPhoto(p) {
     </div>`;
 }
 
-function renderPhotoRow(key, p, idx) {
+function renderMediaRow(key, p, idx) {
   // `key` names the row for ids/actions ("memory"); `field` is the actual
-  // array on `state` it belongs to ("memories") — picking/replacing a photo
+  // array on `state` it belongs to ("memories") — picking/replacing a file
   // needs the latter, or it silently writes to a property that doesn't exist.
   const field = key === 'extra' ? 'extra' : 'memories';
   return html`
     <div class="row-card photo-field" data-index="${idx}">
-      <label class="photo-field__preview" for="${key}-input-${idx}">${photoPreview(p)}</label>
+      <label class="photo-field__preview" for="${key}-input-${idx}">${mediaPreview(p)}</label>
       <div class="photo-field__side">
-        <input class="sr-only" id="${key}-input-${idx}" type="file" accept="image/*" data-slot="${field}" data-index="${idx}">
-        <label class="btn btn--small btn--ghost" for="${key}-input-${idx}">${p?.url ? 'Replace photo' : 'Choose a photo'}</label>
-        <input class="input" data-f="${field}.${idx}.caption" value="${p?.caption || ''}" placeholder="a caption, in handwriting" aria-label="Photo caption">
+        <input class="sr-only" id="${key}-input-${idx}" type="file" accept="image/*,video/*" data-slot="${field}" data-index="${idx}">
+        <label class="btn btn--small btn--ghost" for="${key}-input-${idx}">${p?.url ? 'Replace' : 'Choose a photo or video'}</label>
+        <input class="input" data-f="${field}.${idx}.caption" value="${p?.caption || ''}" placeholder="a caption, in handwriting" aria-label="Caption">
       </div>
-      <button type="button" class="row-card__remove icon-btn" data-action="remove-${key}" data-index="${idx}" aria-label="Remove this photo">${icon('x')}</button>
+      <button type="button" class="row-card__remove icon-btn" data-action="remove-${key}" data-index="${idx}" aria-label="Remove this">${icon('x')}</button>
     </div>`;
 }
 

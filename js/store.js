@@ -6,13 +6,20 @@ import { slugify, setPath } from './ui.js';
 import { getClient } from './supabase-client.js';
 import { isUploaded, remove as removeImage } from './imagestore.js';
 
-// Fields the quick "Edit handwriting" toggle can change in place, without
-// opening the full recipe form.
-const QUICK_EDITABLE = /^(quote|note\.text|photo\.caption|photos\.\d+\.caption|memories\.\d+\.caption)$/;
-const SETTING_KEYS = ['heroHand', 'homeBracket', 'collectionIntro'];
+// Fields the quick "Edit this page" toggle can change in place, without
+// opening the full recipe form. `PLAIN_COLUMNS` are their own text columns;
+// anything else is a path into a jsonb column (note / photo / photos / memories).
+const QUICK_EDITABLE = /^(title|tagline|contributor|quote|note\.text|photo\.caption|photos\.\d+\.caption|memories\.\d+\.caption)$/;
+const PLAIN_COLUMNS = new Set(['title', 'tagline', 'contributor', 'quote']);
+const REQUIRED_FIELDS = new Set(['title']); // quick-edit refuses to blank these out
+
+const SETTING_KEYS = ['heroHand', 'homeBracket', 'homeTitle', 'homeSubhead', 'collectionTitle', 'collectionIntro'];
 const SETTING_DEFAULTS = {
   heroHand: 'cook something. write it down. pass it on.',
   homeBracket: 'the recipes we cooked at flat 61, written down by the people who cooked them',
+  homeTitle: 'Our\nKitchen',
+  homeSubhead: 'Find something to make.',
+  collectionTitle: 'All the\nrecipes',
   collectionIntro: 'what are we making tonight?',
 };
 
@@ -71,16 +78,17 @@ export async function getRecipe(id) {
   return data ? fromRow(data) : null;
 }
 
-// Changes one handwritten field without touching the rest of the recipe.
-// `quote` is its own column; the others live inside a jsonb column, so this
-// reads that column, patches it in memory, and writes the whole thing back.
+// Changes one field in place without touching the rest of the recipe.
+// A handful of fields are their own text columns; the others live inside a
+// jsonb column, so those are read, patched in memory, and written back whole.
 export async function updateRecipeField(id, path, value) {
   if (!QUICK_EDITABLE.test(path)) return false;
   const client = getClient();
   value = String(value).trim();
+  if (!value && REQUIRED_FIELDS.has(path)) return false;
 
-  if (path === 'quote') {
-    const { error } = await client.from('recipes').update({ quote: value }).eq('id', id);
+  if (PLAIN_COLUMNS.has(path)) {
+    const { error } = await client.from('recipes').update({ [path]: value }).eq('id', id);
     return !error;
   }
 
@@ -192,8 +200,10 @@ export function scrapbook(list) {
 export function collagePhotos(list) {
   const food = [], memories = [];
   for (const r of list) {
-    if (r.photo?.src) food.push(r.photo);
-    for (const p of r.photos || []) if (p.src) food.push(p);
+    // The collage stipples these live — video can't be, so it's left out here
+    // (it still shows normally, playable, on the recipe's own page).
+    if (r.photo?.src && r.photo.type !== 'video') food.push(r.photo);
+    for (const p of r.photos || []) if (p.src && p.type !== 'video') food.push(p);
     for (const m of r.memories || []) if (m.src) memories.push(m);
   }
   return { food, memories };

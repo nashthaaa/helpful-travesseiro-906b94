@@ -28,7 +28,7 @@ export async function recipeView({ params: [id] }) {
   const [, ...moreMemories] = memories; // page 3's leftovers, same list either way
   const long = r.title.length > 26 ? 'display--long' : '';
   const cookBtn = html`<a class="btn" href="#/recipe/${r.id}/cook">${icon('pot')} Start cooking</a>`;
-  const facts = [`by ${r.contributor}`, r.servings ? `serves ${r.servings}` : '', r.category].filter(Boolean).join(' · ');
+  const factsEnd = [r.servings ? `serves ${r.servings}` : '', r.category].filter(Boolean).join(' · ');
 
   const body = html`
     ${editBar(html`<a class="pagebar__link" href="#/recipes">${icon('left')} All recipes</a>`, html`<a class="pagebar__link" href="#/edit/${r.id}">Edit recipe</a>`)}
@@ -38,9 +38,9 @@ export async function recipeView({ params: [id] }) {
         ${r.sample ? html`<p class="stamp">Sample recipe · delete it once you have added your own</p>` : ''}
         <div class="spread__cols">
           <div class="spread__text">
-            ${r.tagline ? html`<p class="bracket bracket--left">[ ${r.tagline.replace(/\.$/, '').toLowerCase()} ]</p>` : ''}
-            <h1 class="display ${long}" id="r-title">${r.title}</h1>
-            <p class="meta byline">${facts}</p>
+            <p class="bracket bracket--left">[ <span ${ed(scope, 'tagline', 'a line for the top of the page')}>${r.tagline || ''}</span> ]</p>
+            <h1 class="display ${long}" id="r-title" ${ed(scope, 'title', 'name this recipe')}>${r.title}</h1>
+            <p class="meta byline">by <span ${ed(scope, 'contributor', 'who cooked this?')}>${r.contributor}</span>${factsEnd ? ` · ${factsEnd}` : ''}</p>
             <blockquote class="hand hand--lg quote" ${ed(scope, 'quote', 'add a quote')}>${r.quote || ''}</blockquote>
             <div class="actions">${cookBtn}</div>
           </div>

@@ -17,7 +17,7 @@ export async function homeView() {
 
       <div class="hero">
         <div class="hero__text">
-          <h1 class="display" id="home-title">Our<br>Kitchen</h1>
+          <h1 class="display" id="home-title" style="white-space:pre-line" ${ed('site', 'homeTitle', 'the cookbook\'s name')}>${settings.homeTitle}</h1>
           <p class="hand hand--lg hero__hand" ${ed('site', 'heroHand', 'a line to open the book')}>${settings.heroHand}</p>
           <div class="actions">
             <a class="btn" href="#/add">${icon('plus')} Add a recipe</a>
@@ -32,7 +32,7 @@ export async function homeView() {
     <section class="sheet" aria-labelledby="index-title">
       <div class="index">
         <div class="contents">
-          <h2 class="display display--md" id="index-title">Find something to make.</h2>
+          <h2 class="display display--md" id="index-title" ${ed('site', 'homeSubhead', 'a heading for this section')}>${settings.homeSubhead}</h2>
           <ul class="toc">
             ${CATEGORIES.map((c) => html`
               <li><a href="#/recipes?cat=${c}"><span>${cap(c)}</span><i class="leader" aria-hidden="true"></i><span class="toc__n">${counts[c] || 0}</span></a></li>`)}

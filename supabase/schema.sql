@@ -23,10 +23,13 @@ create table if not exists public.recipes (
 
 alter table public.recipes enable row level security;
 
+-- The whole cookbook is private: only signed-in friends can read it, not
+-- just write to it.
 drop policy if exists "recipes are readable by anyone" on public.recipes;
-create policy "recipes are readable by anyone"
+drop policy if exists "recipes are readable by signed-in friends" on public.recipes;
+create policy "recipes are readable by signed-in friends"
   on public.recipes for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 drop policy if exists "signed-in friends can add recipes" on public.recipes;
 create policy "signed-in friends can add recipes"
@@ -63,6 +66,9 @@ insert into storage.buckets (id, name, public)
 values ('recipe-photos', 'recipe-photos', true)
 on conflict (id) do nothing;
 
+-- Still open, unlike the tables above: a signed-URL setup would be needed to
+-- lock down individual files too, and without the (now gated) recipe rows to
+-- point at them, there's no way to discover a photo's URL in practice.
 drop policy if exists "recipe photos are readable by anyone" on storage.objects;
 create policy "recipe photos are readable by anyone"
   on storage.objects for select
@@ -93,9 +99,10 @@ create table if not exists public.settings (
 alter table public.settings enable row level security;
 
 drop policy if exists "settings are readable by anyone" on public.settings;
-create policy "settings are readable by anyone"
+drop policy if exists "settings are readable by signed-in friends" on public.settings;
+create policy "settings are readable by signed-in friends"
   on public.settings for select
-  using (true);
+  using (auth.role() = 'authenticated');
 
 drop policy if exists "signed-in friends can change settings" on public.settings;
 create policy "signed-in friends can change settings"

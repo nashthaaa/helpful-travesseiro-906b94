@@ -208,16 +208,20 @@ body[data-view='cook'] .site-header, body[data-view='cook'] .site-footer { displ
 .piece--d .piece__frame { background: #dbe6f0; }
 .piece__frame.is-round { border-radius: 50%; }
 .piece--c::after { content: ''; position: absolute; inset: -8px; border: 1px solid var(--blue-faint); border-radius: 50%; pointer-events: none; }
-.piece__dots { position: absolute; inset: 0; width: 100%; height: 100%; }
+.piece__frame .dots { width: 100%; height: 100%; }
 
-/* full colour spreads out from the touch point, over the dots */
-.piece__reveal { position: absolute; inset: 0; overflow: hidden; clip-path: circle(0% at var(--ox, 50%) var(--oy, 50%)); transition: clip-path .9s cubic-bezier(.3, .7, .2, 1); }
-.piece__reveal img { position: absolute; max-width: none; object-fit: cover; width: calc(var(--zoom) * 100%); height: calc(var(--zoom) * 100%); left: calc((1 - var(--zoom)) * var(--px) * 1%); top: calc((1 - var(--zoom)) * var(--py) * 1%); object-position: calc(var(--px) * 1%) calc(var(--py) * 1%); }
-.piece.is-on .piece__reveal { clip-path: circle(150% at var(--ox, 50%) var(--oy, 50%)); }
-@media (hover: hover) { .piece:hover .piece__reveal { clip-path: circle(150% at var(--ox, 50%) var(--oy, 50%)); } }
-.piece.no-dots .piece__dots { display: none; }
-.piece.no-dots .piece__reveal { clip-path: none; }
-.piece.no-dots .piece__reveal img { filter: grayscale(1); }
+/* ---------- dotted photos: stippled live, reveal colour on touch ----------
+   Used by the homepage collage and by food photos on a recipe page. */
+.dots { position: relative; overflow: hidden; background: var(--print); }
+.dots__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.dots__reveal { position: absolute; inset: 0; overflow: hidden; clip-path: circle(0% at var(--ox, 50%) var(--oy, 50%)); transition: clip-path .9s cubic-bezier(.3, .7, .2, 1); }
+.dots__reveal img { position: absolute; max-width: none; object-fit: cover; width: calc(var(--zoom) * 100%); height: calc(var(--zoom) * 100%); left: calc((1 - var(--zoom)) * var(--px) * 1%); top: calc((1 - var(--zoom)) * var(--py) * 1%); object-position: calc(var(--px) * 1%) calc(var(--py) * 1%); }
+.dots.is-on .dots__reveal { clip-path: circle(150% at var(--ox, 50%) var(--oy, 50%)); }
+@media (hover: hover) { .dots:hover .dots__reveal { clip-path: circle(150% at var(--ox, 50%) var(--oy, 50%)); } }
+.dots.no-dots .dots__canvas { display: none; }
+.dots.no-dots .dots__reveal { clip-path: none; }
+.dots.no-dots .dots__reveal img { filter: grayscale(1); }
+.print .dots { width: 100%; }
 
 /* the old-kitchen snapshot stays black and white */
 .print--bw img { filter: grayscale(1) contrast(1.06); }

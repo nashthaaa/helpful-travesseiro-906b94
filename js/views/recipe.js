@@ -1,4 +1,5 @@
 import { html, print, icon, cap, ingredientAmount, ed } from '../ui.js';
+import { dottedPrint, mountDots } from '../dots.js';
 import { getRecipe } from '../store.js';
 import { editBar, setupEditing } from '../edit.js';
 import { notFoundView } from './misc.js';
@@ -39,7 +40,7 @@ export async function recipeView({ params: [id] }) {
           </div>
 
           <div class="spread__media">
-            ${print(r.photo, { seed: r.id, tilt: 1.4, eager: true, ratio: 0.8, caption: r.photo?.caption, edit: { scope, path: 'photo.caption' }, sizes: '(min-width: 1020px) 470px, 90vw' })}
+            ${dottedPrint(r.photo, { seed: r.id, tilt: 1.4, ratio: 0.8, caption: r.photo?.caption, edit: { scope, path: 'photo.caption' } })}
             ${memory ? html`<div class="memory">${print(memory, { seed: memory.src, tilt: -3, tape: 'top', variant: 'print--polaroid', ratio: 1.17, edit: { scope, path: 'memories.0.caption' } })}</div>` : ''}
           </div>
         </div>
@@ -78,8 +79,8 @@ export async function recipeView({ params: [id] }) {
           </div>
           ${(extraPhoto || moreMemories.length) ? html`
           <div class="spread__media spread__media--quiet">
-            ${extraPhoto ? print(extraPhoto, { seed: extraPhoto.src, tilt: 0, variant: 'print--plain', ratio: 1, edit: { scope, path: 'photos.0.caption' } }) : ''}
-            ${morePhotos.map((p, i) => print(p, { seed: p.src, tilt: 0, variant: 'print--plain', edit: { scope, path: `photos.${i + 1}.caption` } }))}
+            ${extraPhoto ? dottedPrint(extraPhoto, { seed: extraPhoto.src, tilt: 0, variant: 'print--plain', ratio: 1, edit: { scope, path: 'photos.0.caption' } }) : ''}
+            ${morePhotos.map((p, i) => dottedPrint(p, { seed: p.src, tilt: 0, variant: 'print--plain', edit: { scope, path: `photos.${i + 1}.caption` } }))}
             ${moreMemories.map((m, i) => html`<div class="memory">${print(m, { seed: m.src, tilt: 2.6, tape: 'top', variant: 'print--polaroid', edit: { scope, path: `memories.${i + 1}.caption` } })}</div>`)}
           </div>` : ''}
         </div>
@@ -90,6 +91,7 @@ export async function recipeView({ params: [id] }) {
   // Left / right arrow keys turn the page, like the notebook.
   function mount(root) {
     setupEditing(root);
+    const stopDots = mountDots(root);
     const pages = [...root.querySelectorAll('.spread')];
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const go = (n) => pages[n - 1]?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
@@ -109,7 +111,7 @@ export async function recipeView({ params: [id] }) {
       if (e.key === 'ArrowLeft') go(Math.max(1, current() - 1));
     };
     document.addEventListener('keydown', onKey);
-    mount.off = () => document.removeEventListener('keydown', onKey);
+    mount.off = () => { document.removeEventListener('keydown', onKey); stopDots(); };
   }
 
   return { title: r.title, body, mount, unmount: () => mount.off?.() };

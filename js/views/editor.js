@@ -1,6 +1,6 @@
 // The recipe form: add a new recipe, or change anything about an existing
-// one — text, ingredients, steps, and every photo. Saves to this browser
-// only, until Stage 3 moves storage to the shared database.
+// one — text, ingredients, steps, and every photo. Shared with everyone via
+// Supabase; only signed-in friends can use it.
 
 import { html, str, icon, cap, CATEGORIES, setPath } from '../ui.js';
 import { getRecipe, saveRecipe, deleteRecipe } from '../store.js';
@@ -17,21 +17,23 @@ const emptyPhoto = () => ({ src: '', url: '', w: null, h: null, caption: '' });
 const withPreview = (p) => (p?.src ? { src: p.src, url: p.src, w: p.w || null, h: p.h || null, caption: p.caption || '' } : null);
 
 export async function editorView({ params: [id] }) {
-  const existing = id ? await getRecipe(id) : null;
-  if (id && !existing) return { title: 'Recipe not found', body: notFound() };
-
+  // Check sign-in before touching the database at all, so this gate shows
+  // up front — never a "recipe not found" or connection error underneath it.
   if (!isSignedIn()) {
     const body = html`
       <div class="editor">
         <p class="crumbs"><a href="${id ? `#/recipe/${id}` : '#/recipes'}">${icon('left')} ${id ? 'Back to the recipe' : 'All recipes'}</a></p>
         <section class="sheet sheet--short" aria-labelledby="ed-title">
-          <p class="label">${id ? `Editing ${existing.title}` : 'A new page in the notebook'}</p>
+          <p class="label">${id ? 'Editing a recipe' : 'A new page in the notebook'}</p>
           <h1 class="display display--md" id="ed-title">${id ? 'Sign in to edit' : 'Sign in to add a recipe'}</h1>
           ${signInPanel('anyone in the kitchen can browse — signing in is just for adding and editing.')}
         </section>
       </div>`;
-    return { title: id ? `Edit ${existing.title}` : 'Add a recipe', body, mount: mountSignInPanel };
+    return { title: id ? 'Edit recipe' : 'Add a recipe', body, mount: mountSignInPanel };
   }
+
+  const existing = id ? await getRecipe(id) : null;
+  if (id && !existing) return { title: 'Recipe not found', body: notFound() };
 
   const state = existing ? {
     title: existing.title || '',

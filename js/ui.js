@@ -49,6 +49,21 @@ export function tiltFor(seed, max = 2.4) {
   return +(sign * (0.8 + (r * 2 % 1) * (max - 0.8))).toFixed(2);
 }
 
+// Splits a list into consecutive runs sharing the same group (a multi-part
+// recipe's "for the cake" / "for the frosting" ingredients or steps).
+// Ungrouped items (group '') form runs too, just without a heading — a
+// recipe that never uses groups renders as one plain run, unchanged.
+export function chunkByGroup(items, keyOf) {
+  const chunks = [];
+  for (const item of items) {
+    const g = keyOf(item) || '';
+    const last = chunks[chunks.length - 1];
+    if (last && last.group === g) last.items.push(item);
+    else chunks.push({ group: g, items: [item] });
+  }
+  return chunks;
+}
+
 export function setPath(obj, path, value) {
   const keys = path.split('.');
   let o = obj;

@@ -1,4 +1,4 @@
-import { html, print, icon, cap, ingredientAmount, ed } from '../ui.js';
+import { html, print, icon, cap, ingredientAmount, chunkByGroup, ed } from '../ui.js';
 import { dottedPrint, mountDots } from '../dots.js';
 import { getRecipe } from '../store.js';
 import { editBar, setupEditing } from '../edit.js';
@@ -59,13 +59,15 @@ export async function recipeView({ params: [id] }) {
         <div class="spread__cols">
           <div class="spread__text">
             <h2 class="display display--md" id="r-gather">Gather these first.</h2>
-            <ul class="ing">
-              ${r.ingredients.map((i) => html`
-                <li>
-                  <span class="ing__amt">${ingredientAmount(i)}</span>
-                  <span class="ing__item">${i.item}${i.amount != null && i.note ? html`<span class="ing__note">${i.note}</span>` : ''}</span>
-                </li>`)}
-            </ul>
+            ${chunkByGroup(r.ingredients, (i) => i.group).map(({ group, items }) => html`
+              ${group ? html`<p class="part-label">${group}</p>` : ''}
+              <ul class="ing">
+                ${items.map((i) => html`
+                  <li>
+                    <span class="ing__amt">${ingredientAmount(i)}</span>
+                    <span class="ing__item">${i.item}${i.amount != null && i.note ? html`<span class="ing__note">${i.note}</span>` : ''}</span>
+                  </li>`)}
+              </ul>`)}
           </div>
           <div class="spread__side">
             <aside class="note ${r.note?.text ? '' : 'note--empty'}">
@@ -81,9 +83,11 @@ export async function recipeView({ params: [id] }) {
         <div class="spread__cols ${extraPhoto || moreMemories.length ? '' : 'spread__cols--single'}">
           <div class="spread__text">
             <h2 class="display display--md" id="r-method">Then make it.</h2>
-            <ol class="steps">
-              ${r.steps.map((s) => html`<li><p>${s}</p></li>`)}
-            </ol>
+            ${chunkByGroup(r.steps, (s) => s.group).map(({ group, items }) => html`
+              ${group ? html`<p class="part-label">${group}</p>` : ''}
+              <ol class="steps">
+                ${items.map((s) => html`<li><p>${s.text}</p></li>`)}
+              </ol>`)}
           </div>
           ${(extraPhoto || moreMemories.length) ? html`
           <div class="spread__media spread__media--quiet">

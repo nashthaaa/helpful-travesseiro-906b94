@@ -9,8 +9,17 @@ import { isUploaded, remove as removeImage } from './imagestore.js';
 // Fields the quick "Edit handwriting" toggle can change in place, without
 // opening the full recipe form.
 const QUICK_EDITABLE = /^(quote|note\.text|photo\.caption|photos\.\d+\.caption|memories\.\d+\.caption)$/;
-const SETTING_KEYS = ['heroHand'];
-const SETTING_DEFAULTS = { heroHand: 'cook something. write it down. pass it on.' };
+const SETTING_KEYS = ['heroHand', 'homeBracket', 'collectionIntro'];
+const SETTING_DEFAULTS = {
+  heroHand: 'cook something. write it down. pass it on.',
+  homeBracket: 'the recipes we cooked at flat 61, written down by the people who cooked them',
+  collectionIntro: 'what are we making tonight?',
+};
+
+// Older rows stored steps as plain strings; a multi-part recipe's steps are
+// { text, group } objects. Normalize on the way out so every view only ever
+// sees the richer shape, regardless of which format a given row was saved in.
+const normalizeStep = (s) => (typeof s === 'string' ? { text: s, group: undefined } : s);
 
 function fromRow(row) {
   return {
@@ -23,7 +32,7 @@ function fromRow(row) {
     quote: row.quote || undefined,
     note: row.note || undefined,
     ingredients: row.ingredients || [],
-    steps: row.steps || [],
+    steps: (row.steps || []).map(normalizeStep),
     photo: row.photo || null,
     photos: row.photos || [],
     memories: row.memories || [],

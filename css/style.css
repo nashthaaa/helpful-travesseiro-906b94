@@ -430,6 +430,7 @@ body[data-view='cook'] .site-header, body[data-view='cook'] .site-footer { displ
   border: 0; border-bottom: 2px solid var(--ink); border-radius: 0; font-size: 1.05rem; font-family: var(--font-type);
 }
 textarea.input { border: 1.5px solid var(--ink); padding: .7rem .8rem; resize: vertical; min-height: 4.5rem; }
+.input--part { border-bottom-style: dashed; border-bottom-color: var(--ink-soft); font-size: .92rem; color: var(--ink-soft); }
 .input::placeholder { color: var(--ink-soft); opacity: .75; }
 .input:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
 .field .select select { min-height: 50px; }
@@ -475,3 +476,8 @@ textarea.input { border: 1.5px solid var(--ink); padding: .7rem .8rem; resize: v
 .pagebar__signin .signin { margin-top: 10px; }
 
 [data-nowrap] { white-space: nowrap; }
+
+.coll-hand { margin-top: 1.4rem; transform: rotate(-1deg); transform-origin: left; }
+
+.part-label { margin: 2.6rem 0 .5rem; font-size: .8rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); }
+.part-label + .ing, .part-label + .steps { margin-top: 0; }

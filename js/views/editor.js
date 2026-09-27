@@ -9,8 +9,10 @@ import { isSignedIn } from '../auth.js';
 import { signInPanel, mountSignInPanel } from '../auth-ui.js';
 
 const YOU_KEY = 'sb8:you';
-const emptyIngredient = () => ({ amount: '', unit: '', item: '', note: '' });
+const emptyIngredient = (group = '') => ({ amount: '', unit: '', item: '', note: '', group });
+const emptyStep = (group = '') => ({ text: '', group });
 const emptyPhoto = () => ({ src: '', url: '', w: null, h: null, caption: '' });
+const lastGroup = (rows) => rows[rows.length - 1]?.group || '';
 
 // A photo already on the recipe, ready to preview — its "src" is already a
 // showable URL, whether it's an upload or one of the original mockup photos.
@@ -43,15 +45,15 @@ export async function editorView({ params: [id] }) {
     servings: existing.servings || '',
     quote: existing.quote || '',
     note: { text: existing.note?.text || '', by: existing.note?.by || '' },
-    ingredients: existing.ingredients?.length ? existing.ingredients.map((i) => ({ amount: i.amount ?? '', unit: i.unit || '', item: i.item || '', note: i.note || '' })) : [emptyIngredient()],
-    steps: existing.steps?.length ? [...existing.steps] : [''],
+    ingredients: existing.ingredients?.length ? existing.ingredients.map((i) => ({ amount: i.amount ?? '', unit: i.unit || '', item: i.item || '', note: i.note || '', group: i.group || '' })) : [emptyIngredient()],
+    steps: existing.steps?.length ? existing.steps.map((s) => (typeof s === 'string' ? { text: s, group: '' } : { text: s.text || '', group: s.group || '' })) : [emptyStep()],
     photo: withPreview(existing.photo),
     extra: (existing.photos || []).map(withPreview).filter(Boolean),
     memories: (existing.memories || []).map(withPreview).filter(Boolean),
   } : {
     title: '', contributor: (() => { try { return localStorage.getItem(YOU_KEY) || ''; } catch { return ''; } })(),
     category: 'dinner', tagline: '', servings: '', quote: '', note: { text: '', by: '' },
-    ingredients: [emptyIngredient()], steps: [''], photo: null, extra: [], memories: [],
+    ingredients: [emptyIngredient()], steps: [emptyStep()], photo: null, extra: [], memories: [],
   };
 
   const body = html`
@@ -62,7 +64,7 @@ export async function editorView({ params: [id] }) {
         <p class="label">${id ? 'Editing' : 'A new page in the notebook'}</p>
         <h1 class="display display--md" id="ed-title">${id ? 'Edit recipe' : 'Add a recipe'}</h1>
         ${existing?.sample ? html`<p class="stamp">This is a sample recipe — saving will replace it with yours.</p>` : ''}
-        <p class="lede">Saved here, everyone in the kitchen sees it.</p>
+        <p class="lede">Saved here, everyone in the kitchen sees it. Save any time, even half-finished — come back to "Edit recipe" later to carry on.</p>
 
         <form class="form" novalidate>
           <div class="field-row field-row--2">
@@ -213,9 +215,9 @@ export async function editorView({ params: [id] }) {
       const action = btn.dataset.action;
       const i = btn.dataset.index != null ? +btn.dataset.index : null;
 
-      if (action === 'add-ingredient') { state.ingredients.push(emptyIngredient()); refresh('ingredients'); root.querySelector(`#ing-rows [data-index="${state.ingredients.length - 1}"] input`)?.focus(); }
+      if (action === 'add-ingredient') { state.ingredients.push(emptyIngredient(lastGroup(state.ingredients))); refresh('ingredients'); root.querySelector(`#ing-rows [data-index="${state.ingredients.length - 1}"] input`)?.focus(); }
       else if (action === 'remove-ingredient') { if (state.ingredients.length > 1) { state.ingredients.splice(i, 1); refresh('ingredients'); } }
-      else if (action === 'add-step') { state.steps.push(''); refresh('steps'); root.querySelector(`#step-rows [data-index="${state.steps.length - 1}"] textarea`)?.focus(); }
+      else if (action === 'add-step') { state.steps.push(emptyStep(lastGroup(state.steps))); refresh('steps'); root.querySelector(`#step-rows [data-index="${state.steps.length - 1}"] textarea`)?.focus(); }
       else if (action === 'remove-step') { if (state.steps.length > 1) { state.steps.splice(i, 1); refresh('steps'); } }
       else if (action === 'add-extra') { state.extra.push(emptyPhoto()); refresh('extra'); }
       else if (action === 'remove-extra') { const [p] = state.extra.splice(i, 1); if (p?.src && photos.isUploaded(p.src)) await photos.remove(p.src); refresh('extra'); }
@@ -233,12 +235,14 @@ export async function editorView({ params: [id] }) {
       msg.hidden = true;
       const title = state.title.trim();
       if (!title) return showMsg('Give the recipe a name.', root.querySelector('#f-title'));
+      // Everything else is optional — save anytime, even half-finished, and
+      // pick up where you left off later from "Edit recipe".
       const ingredients = state.ingredients
-        .map((i) => ({ amount: i.amount === '' ? null : Number(i.amount), unit: (i.unit || '').trim(), item: (i.item || '').trim(), note: (i.note || '').trim() }))
+        .map((i) => ({ amount: i.amount === '' ? null : Number(i.amount), unit: (i.unit || '').trim(), item: (i.item || '').trim(), note: (i.note || '').trim(), group: (i.group || '').trim() || undefined }))
         .filter((i) => i.item);
-      if (!ingredients.length) return showMsg('Add at least one ingredient.');
-      const steps = state.steps.map((s) => s.trim()).filter(Boolean);
-      if (!steps.length) return showMsg('Add at least one step.');
+      const steps = state.steps
+        .map((s) => ({ text: s.text.trim(), group: (s.group || '').trim() || undefined }))
+        .filter((s) => s.text);
 
       const contributor = state.contributor.trim() || 'Someone in the kitchen';
       try { localStorage.setItem(YOU_KEY, contributor); } catch { /* private mode: fine */ }
@@ -273,6 +277,7 @@ export async function editorView({ params: [id] }) {
 function renderIngredient(i, idx) {
   return html`
     <div class="row-card" data-index="${idx}">
+      <div class="field"><label class="label" for="ing-group-${idx}">Part (optional)</label><input class="input input--part" id="ing-group-${idx}" data-f="ingredients.${idx}.group" value="${i.group}" placeholder="e.g. for the cake — leave blank if there's just one part"></div>
       <div class="field-row field-row--3">
         <div class="field"><label class="label" for="ing-amt-${idx}">Amount</label><input class="input" id="ing-amt-${idx}" data-f="ingredients.${idx}.amount" type="number" step="any" min="0" value="${i.amount}"></div>
         <div class="field"><label class="label" for="ing-unit-${idx}">Unit</label><input class="input" id="ing-unit-${idx}" data-f="ingredients.${idx}.unit" value="${i.unit}" placeholder="g, tbsp, cloves…"></div>
@@ -286,7 +291,8 @@ function renderIngredient(i, idx) {
 function renderStep(s, idx) {
   return html`
     <div class="row-card" data-index="${idx}">
-      <div class="field"><label class="label" for="step-${idx}">Step ${idx + 1}</label><textarea class="input" id="step-${idx}" data-f="steps.${idx}" rows="2">${s}</textarea></div>
+      <div class="field"><label class="label" for="step-group-${idx}">Part (optional)</label><input class="input input--part" id="step-group-${idx}" data-f="steps.${idx}.group" value="${s.group}" placeholder="e.g. for the cake — leave blank if there's just one part"></div>
+      <div class="field"><label class="label" for="step-${idx}">Step ${idx + 1}</label><textarea class="input" id="step-${idx}" data-f="steps.${idx}.text" rows="2">${s.text}</textarea></div>
       <button type="button" class="row-card__remove icon-btn" data-action="remove-step" data-index="${idx}" aria-label="Remove this step">${icon('x')}</button>
     </div>`;
 }

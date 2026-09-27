@@ -1,5 +1,6 @@
-import { html, str, print, icon, cap, CATEGORIES } from '../ui.js';
-import { listRecipes, searchRecipes, ingredientHit, contributors } from '../store.js';
+import { html, str, print, icon, cap, ed, CATEGORIES } from '../ui.js';
+import { listRecipes, searchRecipes, ingredientHit, contributors, getSettings } from '../store.js';
+import { editBar, setupEditing } from '../edit.js';
 
 const RATIOS = [0.8, 1, 1.25, 0.8, 1, 1.25]; // a little variety down the page
 
@@ -17,7 +18,7 @@ function entry(r, i, q) {
 }
 
 export async function collectionView({ query }) {
-  const all = await listRecipes();
+  const [all, settings] = await Promise.all([listRecipes(), getSettings()]);
   const cooks = contributors(all);
   const state = { q: query.get('q') || '', cat: query.get('cat') || '', by: query.get('by') || '' };
   if (!CATEGORIES.includes(state.cat)) state.cat = '';
@@ -40,9 +41,12 @@ export async function collectionView({ query }) {
   const countText = (s) => { const n = results(s).length; return `${n} ${n === 1 ? 'recipe' : 'recipes'}`; };
 
   const body = html`
+    ${editBar()}
+
     <section class="sheet" aria-labelledby="coll-title">
       <p class="bracket">[ ${all.length} ${all.length === 1 ? 'recipe' : 'recipes'}, cooked by ${cooks.length} ${cooks.length === 1 ? 'person' : 'people'} ]</p>
       <h1 class="display" id="coll-title">All the<br>recipes</h1>
+      <p class="hand hand--lg coll-hand" ${ed('site', 'collectionIntro', 'a line for this page')}>${settings.collectionIntro}</p>
 
       <form class="finder" role="search" aria-label="Search the recipes" autocomplete="off">
         <div class="finder__search">
@@ -74,6 +78,7 @@ export async function collectionView({ query }) {
     </section>`;
 
   function mount(root) {
+    setupEditing(root);
     const q = root.querySelector('#q');
     const by = root.querySelector('#by');
     const clear = root.querySelector('[data-clear]');

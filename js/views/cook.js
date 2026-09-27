@@ -1,4 +1,4 @@
-import { html, icon, ingredientAmount } from '../ui.js';
+import { html, icon, ingredientAmount, chunkByGroup } from '../ui.js';
 import { getRecipe } from '../store.js';
 import { notFoundView } from './misc.js';
 
@@ -46,30 +46,34 @@ export async function cookView({ params: [id] }) {
       </div>
 
       <h2 class="cook__h">Ingredients</h2>
-      <ul class="cook__ing">
-        ${r.ingredients.map((ing, i) => html`
-          <li>
-            <label class="tickrow">
-              <input type="checkbox" data-i="${i}" ${state.ticked.has(i) ? 'checked' : ''}>
-              <span class="tickbox" aria-hidden="true">${icon('check')}</span>
-              <span class="tickrow__amt" data-amt="${i}">${ingredientAmount(ing, state.servings / base)}</span>
-              <span class="tickrow__item">${ing.item}${ing.amount != null && ing.note ? html`<span class="ing__note">${ing.note}</span>` : ''}</span>
-            </label>
-          </li>`)}
-      </ul>
+      ${chunkByGroup(r.ingredients.map((ing, i) => ({ ing, i })), (row) => row.ing.group).map(({ group, items }) => html`
+        ${group ? html`<p class="part-label">${group}</p>` : ''}
+        <ul class="cook__ing">
+          ${items.map(({ ing, i }) => html`
+            <li>
+              <label class="tickrow">
+                <input type="checkbox" data-i="${i}" ${state.ticked.has(i) ? 'checked' : ''}>
+                <span class="tickbox" aria-hidden="true">${icon('check')}</span>
+                <span class="tickrow__amt" data-amt="${i}">${ingredientAmount(ing, state.servings / base)}</span>
+                <span class="tickrow__item">${ing.item}${ing.amount != null && ing.note ? html`<span class="ing__note">${ing.note}</span>` : ''}</span>
+              </label>
+            </li>`)}
+        </ul>`)}
       <p class="meta"><button type="button" class="linklike" id="untick">Untick everything</button></p>
 
       <h2 class="cook__h">Method</h2>
-      <ol class="cook__steps">
-        ${r.steps.map((s, i) => html`
-          <li>
-            <label class="steprow">
-              <input type="checkbox" data-s="${i}" ${state.done.has(i) ? 'checked' : ''}>
-              <span class="stepnum">${i + 1}</span>
-              <span class="steptext">${s}</span>
-            </label>
-          </li>`)}
-      </ol>
+      ${chunkByGroup(r.steps.map((s, i) => ({ s, i })), (row) => row.s.group).map(({ group, items }) => html`
+        ${group ? html`<p class="part-label">${group}</p>` : ''}
+        <ol class="cook__steps">
+          ${items.map(({ s, i }, local) => html`
+            <li>
+              <label class="steprow">
+                <input type="checkbox" data-s="${i}" ${state.done.has(i) ? 'checked' : ''}>
+                <span class="stepnum">${local + 1}</span>
+                <span class="steptext">${s.text}</span>
+              </label>
+            </li>`)}
+        </ol>`)}
       <p class="meta">Tap a step when it's done.</p>
 
       ${r.note?.text ? html`<aside class="cook__note"><p class="label">${r.note.by || r.contributor} says</p><p class="hand hand--lg">${r.note.text}</p></aside>` : ''}

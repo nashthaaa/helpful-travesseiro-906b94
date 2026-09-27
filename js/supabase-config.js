@@ -8,10 +8,10 @@
 // in this project — that key bypasses Row Level Security entirely.
 //
 // Fill these in from your project: Supabase dashboard → Settings → API.
-export const SUPABASE_URL = '';
-export const SUPABASE_ANON_KEY = '';
+export const SUPABASE_URL = 'https://tskbdcohvcfokbafseqb.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_ibMVSvfRMRLlo7dcJFGHyA_69CrbFzF';
 
 // The one shared account everyone in the kitchen signs into (see the setup
 // guide) — just its email, never its password. Not a secret: knowing this
 // address doesn't let anyone in without the password too.
-export const SHARED_LOGIN_EMAIL = '';
+export const SHARED_LOGIN_EMAIL = 'kitchen@flat61.app';

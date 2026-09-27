@@ -332,6 +332,7 @@ body[data-view='cook'] .site-header, body[data-view='cook'] .site-footer { displ
 .byline { margin-top: 1.2rem; }
 .quote { margin-top: 2.6rem; max-width: 12em; transform: rotate(-1.2deg); transform-origin: left top; }
 .memory { width: clamp(190px, 50%, 250px); align-self: flex-end; margin-right: 1rem; }
+.memory--hero { width: min(100%, 27rem); align-self: flex-start; margin: 0; }
 
 .spread__turn { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: clamp(48px, 7vw, 88px); }
 .turn { display: inline-flex; align-items: center; gap: .6rem; min-height: 48px; padding: 0 .2rem; background: none; border: 0; cursor: pointer; font-size: .9rem; color: var(--ink-soft); }

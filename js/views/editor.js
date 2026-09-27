@@ -62,7 +62,7 @@ export async function editorView({ params: [id] }) {
         <p class="label">${id ? 'Editing' : 'A new page in the notebook'}</p>
         <h1 class="display display--md" id="ed-title">${id ? 'Edit recipe' : 'Add a recipe'}</h1>
         ${existing?.sample ? html`<p class="stamp">This is a sample recipe — saving will replace it with yours.</p>` : ''}
-        <p class="lede">For now, this saves on your device only. Everyone will see it once the cookbook has shared storage.</p>
+        <p class="lede">Saved here, everyone in the kitchen sees it.</p>
 
         <form class="form" novalidate>
           <div class="field-row field-row--2">
@@ -134,7 +134,7 @@ export async function editorView({ params: [id] }) {
           </div>
 
           <div class="field">
-            <p class="label">Memories (shown black and white)</p>
+            <p class="label">Memories — the people who made it, if not the food itself</p>
             <div id="memory-rows" class="rows">${state.memories.map((p, idx) => renderPhotoRow('memory', p, idx))}</div>
             <button type="button" class="add-row" data-action="add-memory">${icon('plus')} Add a memory</button>
           </div>

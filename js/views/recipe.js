@@ -19,7 +19,13 @@ export async function recipeView({ params: [id] }) {
 
   const scope = `recipe:${r.id}`;
   const [extraPhoto, ...morePhotos] = r.photos || [];
-  const [memory, ...moreMemories] = r.memories || [];
+  const memories = r.memories || [];
+  // No food photo, but a photo of the people who made it? Let that stand in
+  // as the main picture instead of leaving an empty "photo to come" — a real
+  // notebook would do the same.
+  const memoryIsHero = !r.photo && memories.length > 0;
+  const asideMemory = memoryIsHero ? null : memories[0];
+  const [, ...moreMemories] = memories; // page 3's leftovers, same list either way
   const long = r.title.length > 26 ? 'display--long' : '';
   const cookBtn = html`<a class="btn" href="#/recipe/${r.id}/cook">${icon('pot')} Start cooking</a>`;
   const facts = [`by ${r.contributor}`, r.servings ? `serves ${r.servings}` : '', r.category].filter(Boolean).join(' · ');
@@ -40,8 +46,10 @@ export async function recipeView({ params: [id] }) {
           </div>
 
           <div class="spread__media">
-            ${dottedPrint(r.photo, { seed: r.id, tilt: 1.4, ratio: 0.8, caption: r.photo?.caption, edit: { scope, path: 'photo.caption' } })}
-            ${memory ? html`<div class="memory">${print(memory, { seed: memory.src, tilt: -3, tape: 'top', variant: 'print--polaroid', ratio: 1.17, edit: { scope, path: 'memories.0.caption' } })}</div>` : ''}
+            ${memoryIsHero
+              ? html`<div class="memory memory--hero">${print(memories[0], { seed: memories[0].src, tilt: 1.2, tape: 'top', variant: 'print--polaroid', ratio: 1.17, edit: { scope, path: 'memories.0.caption' } })}</div>`
+              : html`${dottedPrint(r.photo, { seed: r.id, tilt: 1.4, ratio: 0.8, caption: r.photo?.caption, edit: { scope, path: 'photo.caption' } })}
+                     ${asideMemory ? html`<div class="memory">${print(asideMemory, { seed: asideMemory.src, tilt: -3, tape: 'top', variant: 'print--polaroid', ratio: 1.17, edit: { scope, path: 'memories.0.caption' } })}</div>` : ''}`}
           </div>
         </div>
         ${turn({ next: 2 })}

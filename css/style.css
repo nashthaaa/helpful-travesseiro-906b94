@@ -468,3 +468,5 @@ textarea.input { border: 1.5px solid var(--ink); padding: .7rem .8rem; resize: v
 
 .pagebar__signin { flex-basis: 100%; max-width: 30rem; }
 .pagebar__signin .signin { margin-top: 10px; }
+
+[data-nowrap] { white-space: nowrap; }
